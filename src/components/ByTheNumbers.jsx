@@ -54,7 +54,7 @@ function StatCard({ prefix = '', target, suffix = '', label, delay }) {
 
 export default function ByTheNumbers() {
   return (
-    <section className="relative py-16 sm:py-24 px-5">
+    <section className="relative py-14 sm:py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.7 }}
           className="text-center mb-12">

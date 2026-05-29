@@ -6,7 +6,6 @@ const FOR = [
   'You want a real system, not random YouTube tips',
   "You're willing to put in the work to see results",
   'You want to learn at your own pace from your phone',
-  'You want verified vendor links without hunting for them yourself',
 ]
 
 const NOT_FOR = [
@@ -17,7 +16,7 @@ const NOT_FOR = [
 
 export default function WhoItsFor() {
   return (
-    <section className="relative py-20 sm:py-28 px-5">
+    <section className="relative py-14 sm:py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.7 }}
           className="text-center mb-12">
@@ -73,12 +72,6 @@ export default function WhoItsFor() {
               ))}
             </ul>
 
-            <div className="mt-4 rounded-xl p-4" style={{ background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.15)' }}>
-              <p className="text-white/50 font-body text-xs leading-relaxed">
-                If you're willing to follow the system and put in the work,{' '}
-                <span className="text-white/80 font-semibold">results are almost guaranteed.</span>
-              </p>
-            </div>
           </motion.div>
         </div>
       </div>

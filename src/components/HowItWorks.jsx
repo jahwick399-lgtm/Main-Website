@@ -5,25 +5,25 @@ const STEPS = [
     num: '01',
     icon: '🎯',
     title: 'Pick Your Plan',
-    desc: 'Choose the plan that fits where you are right now. Start free and upgrade when you\'re ready. No risk, no commitment.',
+    desc: 'Start free and upgrade when you\'re ready.',
   },
   {
     num: '02',
     icon: '📦',
-    title: 'Get Your Vendors + Training',
-    desc: 'Unlock your vendor links and get instant access to the full reselling curriculum built to take you from zero to profit fast.',
+    title: 'Get Vendors + Training',
+    desc: 'Unlock your vendor links and full curriculum instantly.',
   },
   {
     num: '03',
     icon: '💰',
-    title: 'Start Selling and Stack',
-    desc: 'Follow the system. List your products. Make sales. Reinvest and grow. The roadmap is laid out — you just have to follow it.',
+    title: 'Sell and Stack',
+    desc: 'Follow the system, make sales, reinvest your profits.',
   },
 ]
 
 export default function HowItWorks() {
   return (
-    <section className="relative py-20 sm:py-28 px-5 overflow-hidden">
+    <section className="relative py-14 sm:py-20 px-4 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 50%, rgba(255,215,0,0.03) 0%, transparent 70%)' }} />
 

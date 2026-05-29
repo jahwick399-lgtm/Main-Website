@@ -1,21 +1,21 @@
 import { motion } from 'framer-motion'
 
 const REVIEWS = [
-  { name: 'Jordan M.',   initials: 'JM', text: "Vendor lowkey crazy, made 3k my first couple weeks 😭" },
-  { name: 'Aaliyah T.', initials: 'AT', text: "Been using this vendor for a minute now and results been wild" },
-  { name: 'Chris R.',   initials: 'CR', text: "Got the vendor and already made my money back fast" },
-  { name: 'Destiny W.', initials: 'DW', text: "I ain't even expect this to work that good ngl" },
-  { name: 'Marcus L.',  initials: 'ML', text: "Copped the iPhone vendor and flipped my first order quick" },
-  { name: 'Priya S.',   initials: 'PS', text: "Thought people was overhyping it till I tried it myself 😂" },
-  { name: 'Tyrone B.',  initials: 'TB', text: "I've been eating off these vendors for a while now" },
-  { name: 'Jade K.',    initials: 'JK', text: "I only started wit $50 and kept running it up" },
-  { name: 'Devon A.',   initials: 'DA', text: "Wish I found this sooner ngl" },
-  { name: 'Kira N.',    initials: 'KN', text: "First week using it and I already seen progress" },
-  { name: 'Sam P.',     initials: 'SP', text: "Almost ain't buy it but I'm glad I did" },
-  { name: 'Erica H.',   initials: 'EH', text: "My bro put me onto this sh** works wonders 😭" },
-  { name: 'Darius F.',  initials: 'DF', text: "Been consistent with it and it's been paying off ngl" },
-  { name: 'Leah C.',    initials: 'LC', text: "I was skeptical at first but I see why people talk about it now 😂" },
-  { name: 'Omar J.',    initials: 'OJ', text: "Lowkey one of the best investments I've made this year" },
+  { name: 'Marcus W.',   initials: 'MW', text: "Vendor lowkey crazy, made 3k my first couple weeks 😭" },
+  { name: 'Jaylen T.',  initials: 'JT', text: "Been using this vendor for a minute now and results been wild" },
+  { name: 'Tre B.',     initials: 'TB', text: "Got the vendor and already made my money back fast" },
+  { name: 'Devon A.',   initials: 'DA', text: "I ain't even expect this to work that good ngl" },
+  { name: 'Jordan C.',  initials: 'JC', text: "Copped the iPhone vendor and flipped my first order quick" },
+  { name: 'Malik R.',   initials: 'MR', text: "Thought people was overhyping it till I tried it myself 😂" },
+  { name: 'Andre S.',   initials: 'AS', text: "I've been eating off these vendors for a while now" },
+  { name: 'Chris L.',   initials: 'CL', text: "I only started wit $50 and kept running it up" },
+  { name: 'Darius F.',  initials: 'DF', text: "Wish I found this sooner ngl" },
+  { name: 'Zach P.',    initials: 'ZP', text: "First week using it and I already seen progress" },
+  { name: 'Brandon H.', initials: 'BH', text: "Almost ain't buy it but I'm glad I did" },
+  { name: 'Kevin M.',   initials: 'KM', text: "My bro put me onto this sh** works wonders 😭" },
+  { name: 'Tyler J.',   initials: 'TJ', text: "Been consistent with it and it's been paying off ngl" },
+  { name: 'Isaiah N.',  initials: 'IN', text: "I was skeptical at first but I see why people talk about it now 😂" },
+  { name: 'Cam E.',     initials: 'CE', text: "Lowkey one of the best investments I've made this year" },
 ]
 
 const AVATAR_COLORS = [

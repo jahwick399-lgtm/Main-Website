@@ -1,19 +1,19 @@
 import { motion } from 'framer-motion'
 
 const FEATURES = [
-  { icon: '⚡', title: 'Instant Vendor Access', desc: 'Get your supplier links the second your payment goes through. No waiting, no approval process.' },
-  { icon: '📚', title: 'Full Reselling Curriculum', desc: '40+ lessons covering everything from your first listing to running a real business.' },
-  { icon: '🧮', title: 'Built-In Tools', desc: 'Profit calculators, listing generators, budget planners — all inside your dashboard.' },
-  { icon: '🗺️', title: 'Milestone Roadmap', desc: 'A clear path from $0 to $10k with exact action steps at every stage.' },
-  { icon: '📱', title: 'Built For Your Phone', desc: 'The entire platform is designed to be used on mobile. Learn and manage your business from anywhere.' },
-  { icon: '🔒', title: 'Gated Content That Grows With You', desc: 'Upgrade your plan and instantly unlock more vendors, more lessons, more tools.' },
-  { icon: '💡', title: 'Real Strategies, Not Theory', desc: 'Everything taught here is based on how real resellers actually make money right now.' },
-  { icon: '🔄', title: 'Always Updated', desc: 'New vendor drops, hot product alerts, and lesson updates added regularly.' },
+  { icon: '⚡', title: 'Instant Vendor Access', desc: 'Get supplier links the second you pay.' },
+  { icon: '📚', title: 'Full Reselling Curriculum', desc: '40+ lessons from beginner to business.' },
+  { icon: '🧮', title: 'Built-In Tools', desc: 'Calculators, generators, planners in your dashboard.' },
+  { icon: '🗺️', title: 'Milestone Roadmap', desc: 'Clear path from $0 to $10k.' },
+  { icon: '📱', title: 'Built For Mobile', desc: 'Learn and manage your business anywhere.' },
+  { icon: '🔒', title: 'Grows With You', desc: 'Unlock more vendors and tools as you upgrade.' },
+  { icon: '💡', title: 'Real Strategies', desc: 'Based on how real resellers make money now.' },
+  { icon: '🔄', title: 'Always Updated', desc: 'Fresh vendor drops and lessons added regularly.' },
 ]
 
 export default function WhatYouGet() {
   return (
-    <section className="relative py-20 sm:py-28 px-5">
+    <section className="relative py-14 sm:py-20 px-4">
       <div className="max-w-5xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.7 }}
           className="text-center mb-14">

@@ -4,12 +4,11 @@ import GoldParticles from './components/GoldParticles'
 import MeshBackground from './components/MeshBackground'
 import Navbar from './components/Navbar'
 import Hero from './components/Hero'
+import Plans from './components/Plans'
 import HowItWorks from './components/HowItWorks'
 import ByTheNumbers from './components/ByTheNumbers'
 import WhatYouGet from './components/WhatYouGet'
 import WhoItsFor from './components/WhoItsFor'
-import GetVendors from './components/GetVendors'
-import Plans from './components/Plans'
 import Reviews from './components/Reviews'
 import TrustBadges from './components/TrustBadges'
 import FAQ from './components/FAQ'
@@ -29,12 +28,11 @@ function LandingPage() {
       <Navbar />
       <main className="relative z-10">
         <Hero />
+        <Plans />
         <HowItWorks />
         <ByTheNumbers />
         <WhatYouGet />
         <WhoItsFor />
-        <GetVendors />
-        <Plans />
         <Reviews />
         <TrustBadges />
         <FAQ />

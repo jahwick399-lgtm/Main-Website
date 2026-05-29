@@ -16,9 +16,30 @@ const TABS = [
 ]
 
 const TIER_COLOR = {
-  beginner:     { bg: 'rgba(96,165,250,0.15)',  border: 'rgba(96,165,250,0.4)',  text: '#60a5fa' },
-  intermediate: { bg: 'rgba(255,215,0,0.12)',   border: 'rgba(255,215,0,0.45)', text: '#FFD700' },
-  pro:          { bg: 'rgba(196,132,252,0.15)', border: 'rgba(196,132,252,0.4)', text: '#c084fc' },
+  free:         { bg: 'rgba(255,255,255,0.06)',  border: 'rgba(255,255,255,0.2)',  text: 'rgba(255,255,255,0.55)' },
+  beginner:     { bg: 'rgba(96,165,250,0.15)',   border: 'rgba(96,165,250,0.4)',   text: '#60a5fa' },
+  intermediate: { bg: 'rgba(255,215,0,0.12)',    border: 'rgba(255,215,0,0.45)',   text: '#FFD700' },
+  pro:          { bg: 'rgba(196,132,252,0.15)',  border: 'rgba(196,132,252,0.4)',  text: '#c084fc' },
+}
+
+const FREE_MEMBER = {
+  tier: 'free',
+  planDisplay: 'Free Plan',
+  subscriptionId: null,
+  customerEmail: '',
+  content: {
+    categories: [],
+    lockedCategories: [
+      { id: 'electronics', name: 'Electronics', icon: '📱' },
+      { id: 'fragrance',   name: 'Fragrance',   icon: '🌹' },
+      { id: 'clothing',    name: 'Clothing',     icon: '👕' },
+      { id: 'hoodies',     name: 'Hoodies',      icon: '🧥' },
+      { id: 'shoes',       name: 'Shoes',        icon: '👟' },
+      { id: 'jewelry',     name: 'Jewelry',      icon: '💎' },
+      { id: 'watches',     name: 'Watches',      icon: '⌚' },
+    ],
+    guides: [],
+  },
 }
 
 const LOCKED_CATS = {
@@ -872,8 +893,9 @@ function ToolsSection({ userTier }) {
 // ─── Milestones section ───────────────────────────────────────────────────────
 
 function MilestonesSection({ userTier, completedMilestones, onToggleMilestone, burst }) {
+  const visibleMilestones = userTier === 'free' ? MILESTONES.slice(0, 2) : MILESTONES
   const done = completedMilestones.size
-  const total = MILESTONES.length
+  const total = visibleMilestones.length
 
   return (
     <div className="space-y-5">
@@ -902,7 +924,7 @@ function MilestonesSection({ userTier, completedMilestones, onToggleMilestone, b
           style={{ background: 'linear-gradient(to bottom,rgba(255,215,0,0.5),rgba(255,215,0,0.1))' }} />
 
         <div className="space-y-4">
-          {MILESTONES.map((m, i) => {
+          {visibleMilestones.map((m, i) => {
             const isReached  = completedMilestones.has(m.id)
             const isBurst    = burst === m.id
             const isLocked   = !canAccess(m.tier, userTier) && !isReached
@@ -959,6 +981,15 @@ function MilestonesSection({ userTier, completedMilestones, onToggleMilestone, b
             )
           })}
         </div>
+
+        {userTier === 'free' && (
+          <div className="rounded-2xl p-4 text-center mt-2" style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.15)' }}>
+            <p className="text-white/50 font-body text-xs mb-3">6 more milestones unlocked on Beginner+</p>
+            <a href="/#plans" className="btn-gold px-5 py-2.5 rounded-full text-dark font-body font-bold text-xs inline-block active:scale-[0.97] transition-transform">
+              Upgrade to Unlock →
+            </a>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1192,13 +1223,19 @@ export default function Dashboard() {
 
   useEffect(() => {
     const stored = localStorage.getItem('rm_subscription')
-    if (!stored) { navigate('/'); return }
+    if (!stored) {
+      // No paid subscription — load as free tier
+      localStorage.setItem('rm_free_tier', 'true')
+      setMember(FREE_MEMBER)
+      setLoading(false)
+      return
+    }
     const parsed = JSON.parse(stored)
 
     fetch(`${API}/subscription-status?sub_id=${parsed.subscriptionId}`)
       .then(r => r.json())
       .then(data => {
-        if (data.error) { localStorage.removeItem('rm_subscription'); setError('Subscription verification failed.'); setLoading(false); return }
+        if (data.error) { localStorage.removeItem('rm_subscription'); setMember(FREE_MEMBER); setLoading(false); return }
         const fresh = { ...parsed, ...data, verifiedAt: Date.now() }
         localStorage.setItem('rm_subscription', JSON.stringify(fresh))
         setMember(fresh); setLoading(false)
@@ -1241,6 +1278,7 @@ export default function Dashboard() {
   }
 
   const handleManageBilling = async () => {
+    if (!member.subscriptionId) { window.location.href = '/#plans'; return }
     try {
       const res  = await fetch(`${API}/create-portal-session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription_id: member.subscriptionId }) })
       const data = await res.json()
@@ -1248,7 +1286,11 @@ export default function Dashboard() {
     } catch { alert('Could not open billing portal. Try again.') }
   }
 
-  const handleSignOut = () => { localStorage.removeItem('rm_subscription'); navigate('/') }
+  const handleSignOut = () => {
+    localStorage.removeItem('rm_subscription')
+    localStorage.removeItem('rm_free_tier')
+    navigate('/')
+  }
 
   // Loading state
   if (loading) {
