@@ -174,15 +174,18 @@ const watches = [
   { name: 'IWC', price: '$78', url: 'https://usfans.com/product/3/7719004975?ref=KRYFUS' },
 ]
 
-const FULL_MASTER_LIST = 'https://docs.google.com/spreadsheets/d/1a3R_v5FiirNsIWx6JJrVCaWPUOj1wFD2vhCLilk1hAg/edit?usp=sharing'
+const MASTER_LIST_1 = 'https://docs.google.com/spreadsheets/d/1a3R_v5FiirNsIWx6JJrVCaWPUOj1wFD2vhCLilk1hAg/htmlview'
+const MASTER_LIST_2 = 'https://docs.google.com/spreadsheets/d/1bEDyU7BJ8sNstmoXJa_IPb4FR_9uTFl6-hepzlt0Ad4/edit?gid=595104429#gid=595104429'
 
 module.exports = {
   electronics,
   fragrance,
   hoodies,
-  clothing: hoodies, // same content as hoodies
+  clothing: hoodies,
   shoes,
   jewelry,
   watches,
-  FULL_MASTER_LIST,
+  FULL_MASTER_LIST: MASTER_LIST_1,
+  MASTER_LIST_1,
+  MASTER_LIST_2,
 }

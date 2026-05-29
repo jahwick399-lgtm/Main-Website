@@ -48,7 +48,10 @@ function getMemberContent(tier) {
         id: 'master',
         name: 'Full Master List',
         icon: '📋',
-        items: [{ name: 'Complete Vendor Spreadsheet — All Categories', price: null, url: VENDORS.FULL_MASTER_LIST }],
+        items: [
+          { name: 'Master Spreadsheet — All Categories (Vol. 1)', price: null, url: VENDORS.MASTER_LIST_1 },
+          { name: 'Master Spreadsheet — All Categories (Vol. 2)', price: null, url: VENDORS.MASTER_LIST_2 },
+        ],
       })
     }
     return cats
