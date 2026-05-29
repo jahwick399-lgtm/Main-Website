@@ -1,6 +1,7 @@
 export const TIER_ORDER = ['free', 'beginner', 'intermediate', 'pro']
 
 export function canAccess(moduleTier, userTier) {
+  if (userTier === 'admin') return true
   return TIER_ORDER.indexOf(userTier ?? 'free') >= TIER_ORDER.indexOf(moduleTier)
 }
 

@@ -202,6 +202,19 @@ app.post('/create-portal-session', async (req, res) => {
   }
 })
 
+const ADMIN_EMAIL = 'jahwick399@gmail.com'
+
+app.get('/admin-member-content', (req, res) => {
+  if (req.query.email?.toLowerCase() !== ADMIN_EMAIL) return res.status(401).json({ error: 'Unauthorized' })
+  res.json({
+    tier: 'admin',
+    planDisplay: '👑 Admin',
+    subscriptionId: 'admin',
+    customerEmail: req.query.email,
+    content: getMemberContent('pro'),
+  })
+})
+
 app.post('/webhook', (req, res) => {
   const sig = req.headers['stripe-signature']
   let event

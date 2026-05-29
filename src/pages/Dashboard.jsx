@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { COURSE_MODULES, canAccess } from '../data/courseContent'
 import { MILESTONES } from '../data/milestones'
-import { getSession, clearSession } from '../utils/auth'
+import { getSession, clearSession, getUsers, updateUserTier } from '../utils/auth'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -21,6 +21,7 @@ const TIER_COLOR = {
   beginner:     { bg: 'rgba(96,165,250,0.15)',   border: 'rgba(96,165,250,0.4)',   text: '#60a5fa' },
   intermediate: { bg: 'rgba(255,215,0,0.12)',    border: 'rgba(255,215,0,0.45)',   text: '#FFD700' },
   pro:          { bg: 'rgba(196,132,252,0.15)',  border: 'rgba(196,132,252,0.4)',  text: '#c084fc' },
+  admin:        { bg: 'rgba(255,215,0,0.18)',    border: 'rgba(255,215,0,0.6)',    text: '#FFD700' },
 }
 
 const FREE_MEMBER = {
@@ -1152,7 +1153,7 @@ function HomeSection({ member, setTab, completed, completedMilestones }) {
       )}
 
       {/* Upgrade banner */}
-      {member.tier !== 'pro' && (
+      {member.tier !== 'pro' && member.tier !== 'admin' && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
           className="rounded-2xl p-4 flex items-center justify-between gap-3"
           style={{ background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.2)' }}>
@@ -1207,7 +1208,7 @@ function AccountSection({ member, onManageBilling, onSignOut }) {
           { label: 'Current Plan', content: <PlanBadge tier={member.tier} planDisplay={member.planDisplay} /> },
           member.email ? { label: 'Email', content: <span className="text-white/60 font-body text-sm truncate max-w-[180px] block">{member.email}</span> } : null,
           { label: 'Billing', content: <button onClick={onManageBilling} className="text-sm font-body font-semibold min-h-[44px]" style={{ color: '#FFD700' }}>Manage Billing ↗</button> },
-          member.tier !== 'pro' ? { label: 'Upgrade', content: <a href="/#plans" className="text-sm font-body font-semibold min-h-[44px] flex items-center" style={{ color: '#FFD700' }}>View Plans ↗</a> } : null,
+          (member.tier !== 'pro' && member.tier !== 'admin') ? { label: 'Upgrade', content: <a href="/#plans" className="text-sm font-body font-semibold min-h-[44px] flex items-center" style={{ color: '#FFD700' }}>View Plans ↗</a> } : null,
           { label: 'Support', content: <a href="mailto:support@fliplabs.com" className="text-sm font-body text-white/50 hover:text-white/80 min-h-[44px] flex items-center">support@fliplabs.com ↗</a> },
         ].filter(Boolean).map((row, i, arr) => (
           <div key={i} className="flex items-center justify-between px-5 py-3 min-h-[56px]"
@@ -1231,6 +1232,166 @@ function AccountSection({ member, onManageBilling, onSignOut }) {
         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
         Sign Out / Clear Access
       </motion.button>
+    </div>
+  )
+}
+
+// ─── Admin section ────────────────────────────────────────────────────────────
+
+const TIER_OPTIONS = ['free', 'beginner', 'intermediate', 'pro']
+
+function AdminSection() {
+  const [users, setUsers]         = useState(() => {
+    const raw = getUsers()
+    return Object.values(raw)
+  })
+  const [search, setSearch]       = useState('')
+  const [saved, setSaved]         = useState({})
+  const [pendingTiers, setPending] = useState({})
+  const [confirmDelete, setConfirmDelete] = useState(null)
+
+  const refreshUsers = () => setUsers(Object.values(getUsers()))
+
+  const filtered = users.filter(u =>
+    u.email.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const handleTierChange = (email, tier) => {
+    setPending(p => ({ ...p, [email]: tier }))
+  }
+
+  const handleSave = (email) => {
+    const tier = pendingTiers[email]
+    if (!tier) return
+    updateUserTier(email, tier)
+    refreshUsers()
+    setSaved(p => ({ ...p, [email]: true }))
+    setTimeout(() => setSaved(p => { const n = { ...p }; delete n[email]; return n }), 1500)
+  }
+
+  const handleDelete = (email) => {
+    const raw = getUsers()
+    delete raw[email]
+    localStorage.setItem('fl_users', JSON.stringify(raw))
+    refreshUsers()
+    setConfirmDelete(null)
+  }
+
+  const exportCSV = () => {
+    const header = 'Email,Tier,Joined\n'
+    const rows = users.map(u => `${u.email},${u.tier},${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}`).join('\n')
+    const blob = new Blob([header + rows], { type: 'text/csv' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'flip-labs-users.csv'; a.click()
+  }
+
+  return (
+    <div className="space-y-5">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        <h2 className="font-display text-2xl sm:text-3xl text-white mb-1">
+          🛡️ <span className="gold-text">Admin</span> Panel
+        </h2>
+        <p className="text-white/40 font-body text-sm">Manage users, tiers, and exports.</p>
+      </motion.div>
+
+      {/* Stats + export */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+        className="flex items-center justify-between gap-3 p-4 rounded-2xl"
+        style={{ background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.18)' }}>
+        <div>
+          <div className="font-display text-3xl gold-text">{users.length}</div>
+          <div className="text-white/40 font-body text-xs">Total Users</div>
+        </div>
+        <button onClick={exportCSV}
+          className="px-4 py-2.5 rounded-full text-sm font-body font-bold min-h-[44px]"
+          style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', color: '#FFD700' }}>
+          Export CSV ↓
+        </button>
+      </motion.div>
+
+      {/* Search */}
+      <input
+        type="text"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Search users by email…"
+        className="w-full px-4 py-3 rounded-xl font-body text-sm text-white placeholder-white/20 outline-none"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+      />
+
+      {/* User list */}
+      <div className="space-y-2">
+        {filtered.length === 0 && (
+          <p className="text-white/30 font-body text-sm text-center py-6">No users found.</p>
+        )}
+        {filtered.map((u, i) => (
+          <motion.div key={u.email} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+            className="rounded-2xl p-4 space-y-3"
+            style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-white/80 font-body text-sm font-semibold truncate">{u.email}</div>
+                <div className="text-white/30 font-body text-xs mt-0.5">
+                  Joined {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}
+                </div>
+              </div>
+              <button onClick={() => setConfirmDelete(u.email)}
+                className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-body font-bold min-h-[32px] flex items-center"
+                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}>
+                Delete
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={pendingTiers[u.email] ?? u.tier}
+                onChange={e => handleTierChange(u.email, e.target.value)}
+                className="flex-1 px-3 py-2 rounded-xl text-sm font-body text-white outline-none"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                {TIER_OPTIONS.map(t => <option key={t} value={t} style={{ background: '#111' }}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+              </select>
+              <button onClick={() => handleSave(u.email)}
+                disabled={!pendingTiers[u.email] || pendingTiers[u.email] === u.tier}
+                className="px-4 py-2 rounded-xl text-sm font-body font-bold min-h-[40px] transition-all"
+                style={{
+                  background: saved[u.email] ? 'rgba(52,211,153,0.15)' : 'rgba(255,215,0,0.1)',
+                  border: `1px solid ${saved[u.email] ? 'rgba(52,211,153,0.3)' : 'rgba(255,215,0,0.25)'}`,
+                  color: saved[u.email] ? '#34d399' : '#FFD700',
+                  opacity: (!pendingTiers[u.email] || pendingTiers[u.email] === u.tier) && !saved[u.email] ? 0.4 : 1,
+                }}>
+                {saved[u.email] ? '✓ Saved' : 'Save'}
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Delete confirm dialog */}
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center px-4"
+            style={{ background: 'rgba(0,0,0,0.8)' }}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-sm rounded-2xl p-6 space-y-4"
+              style={{ background: '#111', border: '1px solid rgba(239,68,68,0.3)' }}>
+              <h3 className="font-display text-xl text-white">Delete User?</h3>
+              <p className="text-white/50 font-body text-sm break-all">{confirmDelete}</p>
+              <p className="text-white/35 font-body text-xs">This removes them from localStorage. It cannot be undone.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setConfirmDelete(null)}
+                  className="flex-1 py-3 rounded-xl font-body font-semibold text-sm"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>
+                  Cancel
+                </button>
+                <button onClick={() => handleDelete(confirmDelete)}
+                  className="flex-1 py-3 rounded-xl font-body font-bold text-sm"
+                  style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444' }}>
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -1269,6 +1430,25 @@ export default function Dashboard() {
   useEffect(() => {
     const session = getSession()
     if (!session) { navigate('/login', { replace: true }); return }
+
+    if (session.tier === 'admin') {
+      fetch(`${API}/admin-member-content?email=${encodeURIComponent(session.email)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) { setError('Admin access error.'); setLoading(false); return }
+          setMember({ ...data, email: session.email })
+          setLoading(false)
+        })
+        .catch(() => {
+          setMember({
+            tier: 'admin', planDisplay: '👑 Admin', subscriptionId: 'admin',
+            email: session.email, customerEmail: session.email,
+            content: { categories: [], lockedCategories: [], guides: [] },
+          })
+          setLoading(false)
+        })
+      return
+    }
 
     const stored = localStorage.getItem('rm_subscription')
     if (!stored) {
@@ -1325,7 +1505,7 @@ export default function Dashboard() {
   }
 
   const handleManageBilling = async () => {
-    if (!member.subscriptionId) { window.location.href = '/#plans'; return }
+    if (!member.subscriptionId || member.subscriptionId === 'admin') { return }
     try {
       const res  = await fetch(`${API}/create-portal-session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription_id: member.subscriptionId }) })
       const data = await res.json()
@@ -1337,6 +1517,11 @@ export default function Dashboard() {
     clearSession()
     navigate('/login', { replace: true })
   }
+
+  const tabs = [
+    ...TABS,
+    ...(member?.tier === 'admin' ? [{ id: 'admin', label: 'Admin', icon: '🛡️' }] : []),
+  ]
 
   // Loading state
   if (loading) {
@@ -1448,6 +1633,9 @@ export default function Dashboard() {
       case 'account':
         return <AccountSection member={member} onManageBilling={handleManageBilling} onSignOut={handleSignOut} />
 
+      case 'admin':
+        return <AdminSection />
+
       default:
         return <HomeSection member={member} setTab={setTab} completed={completed} completedMilestones={completedMilestones} />
     }
@@ -1461,7 +1649,7 @@ export default function Dashboard() {
         <div className="mb-6 px-1"><Logo /></div>
         <div className="px-1 mb-5"><PlanBadge tier={member.tier} planDisplay={member.planDisplay} /></div>
         <nav className="flex-1 space-y-1">
-          {TABS.map(t => (
+          {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-body font-medium transition-all min-h-[44px] ${tab === t.id ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
               style={tab === t.id ? { background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.18)' } : {}}>
@@ -1494,7 +1682,7 @@ export default function Dashboard() {
       <motion.div initial={{ y: 80 }} animate={{ y: 0 }} transition={{ type: 'spring', damping: 22, stiffness: 200 }}
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex"
         style={{ background: 'rgba(8,8,8,0.98)', borderTop: '1px solid rgba(255,215,0,0.1)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {TABS.map(t => (
+        {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[60px] transition-all active:scale-[0.93]"
             style={{ color: tab === t.id ? '#FFD700' : 'rgba(255,255,255,0.35)' }}>

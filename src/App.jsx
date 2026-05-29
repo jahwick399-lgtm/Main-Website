@@ -27,7 +27,6 @@ function ProtectedRoute({ children, requireAdmin = false }) {
   const session = getSession()
   if (!session) return <Navigate to="/login" replace />
   if (requireAdmin && session.tier !== 'admin') return <Navigate to="/dashboard" replace />
-  if (!requireAdmin && session.tier === 'admin') return <Navigate to="/admin" replace />
   return children
 }
 

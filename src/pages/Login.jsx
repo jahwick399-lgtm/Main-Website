@@ -27,7 +27,7 @@ export default function Login() {
 
   useEffect(() => {
     const session = getSession()
-    if (session) navigate(session.tier === 'admin' ? '/admin' : '/dashboard', { replace: true })
+    if (session) navigate('/dashboard', { replace: true })
   }, [navigate])
 
   const handleSubmit = (e) => {
@@ -37,7 +37,7 @@ export default function Login() {
     const result = login(email, password)
     setLoading(false)
     if (result.error) { setError(result.error); return }
-    navigate(result.isAdmin ? '/admin' : '/dashboard', { replace: true })
+    navigate('/dashboard', { replace: true })
   }
 
   return (
