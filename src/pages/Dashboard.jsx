@@ -84,6 +84,85 @@ const DAILY_TIPS = [
   'Treat this like a business from day one and it will become one',
 ]
 
+// ─── Plan / upgrade data ─────────────────────────────────────────────────────
+
+const PLAN_PRICES = { beginner: '$14.99/mo', intermediate: '$29.99/mo', pro: '$49.99/mo' }
+const TIER_NEXT   = { free: 'beginner', beginner: 'intermediate', intermediate: 'pro' }
+
+const UPGRADE_FEATURES = {
+  beginner:     ['Electronics, Fragrance & Clothing vendors', 'Full listing templates for every category', '$0 to $500 milestone action plan', 'Packaging, shipping & carrier guide'],
+  intermediate: ['ALL 7 vendor categories unlocked', 'Bulk flipping guide — buy 5–20 units', 'eBay SEO deep dive + Depop algorithm guide', 'Built-in profit margin calculator'],
+  pro:          ['Exclusive Pro-only vendor drops', 'LLC setup + business bank account guide', '$1,000/week step-by-step roadmap', 'Monthly income goal tracker + profit journal'],
+}
+
+const WINS_FEED_DATA = [
+  { name: 'Jordan M.',   location: 'Atlanta, GA',      plan: 'Pro Plan' },
+  { name: 'Marcus L.',   location: 'New York, NY',     plan: 'Intermediate Plan' },
+  { name: 'Chris R.',    location: 'Chicago, IL',      plan: 'Beginner Plan' },
+  { name: 'Malik T.',    location: 'Houston, TX',      plan: 'Pro Plan' },
+  { name: 'Darius F.',   location: 'Dallas, TX',       plan: 'Intermediate Plan' },
+  { name: 'Andre S.',    location: 'Miami, FL',        plan: 'Beginner Plan' },
+  { name: 'Devon A.',    location: 'Los Angeles, CA',  plan: 'Pro Plan' },
+  { name: 'Brandon H.',  location: 'Philadelphia, PA', plan: 'Intermediate Plan' },
+  { name: 'Jaylen T.',   location: 'Seattle, WA',      plan: 'Beginner Plan' },
+  { name: 'Tyler J.',    location: 'Phoenix, AZ',      plan: 'Pro Plan' },
+]
+
+const SEVEN_DAYS = [
+  'Set up accounts on eBay, Depop, and Facebook Marketplace',
+  'Find 5 items around your house to sell. List them today.',
+  'Research your first vendor category — check sold listings',
+  'Place your first vendor order',
+  'Photograph everything. Write all your listings.',
+  'Post all listings across every platform you set up',
+  'Follow up on any messages. Adjust prices if needed.',
+]
+
+const LISTING_CHECKLIST = [
+  'Item is clean and presentable',
+  'Took at least 4 photos (front, back, detail, tag)',
+  'Photos have a clean neutral background',
+  'Checked sold listings to confirm my price is right',
+  'Title includes brand, item name, size, color, condition',
+  'Description answers: condition, measurements, any flaws',
+  'Platform fees calculated — I know my exact profit',
+  'Shipping cost calculated and included or listed separately',
+  'Listed on at least 2 platforms',
+  'Offers enabled on listing',
+  'Responded to any existing messages on other listings',
+]
+
+const GLOSSARY = [
+  { term: 'Flip',             def: 'Buying something low and selling it higher for profit' },
+  { term: 'Vendor',           def: 'A supplier you buy products from to resell' },
+  { term: 'Margin',           def: 'The difference between what you paid and what you sold for' },
+  { term: 'ROI',              def: 'Return on investment — how much you made back vs what you spent' },
+  { term: 'Cross-listing',    def: 'Listing the same item on multiple platforms at once' },
+  { term: 'Dead stock',       def: 'Inventory that isn\'t selling and is sitting too long' },
+  { term: 'Comp',             def: 'A comparable sold listing used to determine your price' },
+  { term: 'Bundle',           def: 'Combining multiple items into one listing to increase value' },
+  { term: 'Lowball',          def: 'A buyer offer that is way below your asking price' },
+  { term: 'Chargeback',       def: 'When a buyer disputes a payment through their bank' },
+  { term: 'Sell-through rate',def: 'How fast your inventory sells' },
+  { term: 'OBO',              def: 'Or Best Offer — seller is open to negotiation' },
+  { term: 'NWT',              def: 'New With Tags — item is brand new with original tags' },
+  { term: 'NWOT',             def: 'New Without Tags — new but tags removed' },
+  { term: 'GUC',              def: 'Good Used Condition' },
+  { term: 'Platform fee',     def: 'The percentage a platform takes from your sale' },
+  { term: 'Payout',           def: 'The money you actually receive after fees' },
+  { term: 'Relisting',        def: 'Taking down and reposting a listing to refresh it' },
+  { term: 'Sourcing',         def: 'The process of finding products to buy and resell' },
+  { term: 'Liquidation',      def: 'Buying bulk returned or excess inventory cheaply' },
+]
+
+const PLATFORMS_DATA = [
+  { name: 'eBay',       bestFor: 'Electronics, collectibles', fee: '13%',           shipping: 'Flexible', payout: '2–3 days',         difficulty: 'Moderate',  buyers: '35–55', pro: 'Massive buyer base',        con: 'Higher fees, more competition' },
+  { name: 'Depop',      bestFor: 'Streetwear, vintage',       fee: '10% + PayPal',  shipping: 'Flexible', payout: 'Instant via PayPal', difficulty: 'Easy',      buyers: '16–30', pro: 'Young trendy buyers',        con: 'Clothing-focused only' },
+  { name: 'FB Market',  bestFor: 'Furniture, local deals',    fee: '0% local / 5%', shipping: 'Local/ship', payout: 'Cash or instant', difficulty: 'Easy',      buyers: '25–50', pro: 'No fees for local sales',    con: 'Lowball offers common' },
+  { name: 'Poshmark',   bestFor: 'Clothing, accessories',     fee: '20%',           shipping: 'Buyer pays', payout: '3 days post-delivery', difficulty: 'Easy', buyers: '18–40', pro: 'Built-in shipping label',    con: 'Very high seller fee' },
+  { name: 'Mercari',    bestFor: 'General merchandise',       fee: '10%',           shipping: 'Flexible', payout: '3 days post-delivery', difficulty: 'Very Easy', buyers: '20–45', pro: 'Simple and beginner-friendly', con: 'Smaller buyer base' },
+]
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function PlanBadge({ tier, planDisplay }) {
@@ -155,21 +234,37 @@ function VendorCategoryCard({ cat, index }) {
   )
 }
 
-function LockedCatCard({ cat, i, total }) {
+function LockedCatCard({ cat, i, total, userTier = 'free' }) {
+  const nextTier  = TIER_NEXT[userTier] || 'beginner'
+  const price     = PLAN_PRICES[nextTier] || '$14.99/mo'
+  const planName  = nextTier.charAt(0).toUpperCase() + nextTier.slice(1)
+
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (total + i) * 0.06 }}
-      className="rounded-2xl p-4 flex items-center justify-between min-h-[56px]"
+      className="rounded-2xl overflow-hidden"
       style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)' }}>
-      <div className="flex items-center gap-3 opacity-30 select-none">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-white/5">{cat.icon}</div>
-        <span className="font-body font-semibold text-white text-sm">{cat.name}</span>
+      {/* Header row */}
+      <div className="px-4 py-3 flex items-center justify-between min-h-[56px]">
+        <div className="flex items-center gap-3 opacity-35 select-none">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-white/5">{cat.icon}</div>
+          <span className="font-body font-semibold text-white text-sm">{cat.name}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm">🔒</span>
+          <a href="/#plans" className="px-3 py-2 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center whitespace-nowrap"
+            style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', color: '#FFD700' }}>
+            {planName} — {price}
+          </a>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <span>🔒</span>
-        <a href="/#plans" className="px-3 py-2 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center"
-          style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', color: '#FFD700' }}>
-          Upgrade
-        </a>
+      {/* Blurred preview rows */}
+      <div className="px-4 pb-3 space-y-1.5 pointer-events-none select-none" style={{ filter: 'blur(5px)' }}>
+        {['Supplier A — $8–$18 per unit', 'Supplier B — $12–$25 per unit', 'Supplier C — $5–$14 per unit'].map((s, si) => (
+          <div key={si} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+            <span className="text-white/50 font-body text-sm">{s}</span>
+            <span className="text-xs font-body px-2 py-1 rounded-full" style={{ background: 'rgba(255,215,0,0.1)', color: '#FFD700' }}>Visit →</span>
+          </div>
+        ))}
       </div>
     </motion.div>
   )
@@ -321,9 +416,9 @@ function ModuleCard({ mod, userTier, completed, onSelectLesson }) {
         {!locked && <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-white/30 text-xs flex-shrink-0">▼</motion.span>}
         {locked && (
           <a href="/#plans" onClick={e => e.stopPropagation()}
-            className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center"
+            className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center whitespace-nowrap"
             style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', color: '#FFD700' }}>
-            Upgrade
+            {mod.tier.charAt(0).toUpperCase() + mod.tier.slice(1)} — {PLAN_PRICES[mod.tier]}
           </a>
         )}
       </button>
@@ -379,8 +474,10 @@ function ToolCard({ title, icon, description, tier, userTier, children }) {
           <div className="text-white/30 font-body text-xs mt-0.5">{description}</div>
         </div>
         {locked ? (
-          <a href="/#plans" onClick={e => e.stopPropagation()} className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center"
-            style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', color: '#FFD700' }}>Upgrade</a>
+          <a href="/#plans" onClick={e => e.stopPropagation()} className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center whitespace-nowrap"
+            style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', color: '#FFD700' }}>
+            {tier.charAt(0).toUpperCase() + tier.slice(1)} — {PLAN_PRICES[tier]}
+          </a>
         ) : (
           <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-white/30 text-xs flex-shrink-0 pr-1">▼</motion.span>
         )}
@@ -891,6 +988,123 @@ function ProfitJournal() {
   )
 }
 
+// Tool 9: Seller Checklist
+function SellerChecklist() {
+  const [checked, setChecked] = useState(new Set())
+  const toggle = (i) => setChecked(prev => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n })
+  const reset  = () => setChecked(new Set())
+  const pct    = (checked.size / LISTING_CHECKLIST.length) * 100
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex-1 mr-4">
+          <div className="flex justify-between text-xs font-body text-white/30 mb-1">
+            <span>Checklist progress</span><span>{checked.size}/{LISTING_CHECKLIST.length}</span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+            <motion.div animate={{ width: `${pct}%` }} transition={{ duration: 0.3 }}
+              className="h-full rounded-full" style={{ background: 'linear-gradient(to right,#FFE566,#FFD700,#FFA500)' }} />
+          </div>
+        </div>
+        <button onClick={reset} className="text-xs font-body px-3 py-1.5 rounded-lg flex-shrink-0"
+          style={{ background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          Reset
+        </button>
+      </div>
+      {LISTING_CHECKLIST.map((item, i) => (
+        <button key={i} onClick={() => toggle(i)}
+          className="w-full flex items-start gap-3 px-3 py-3 rounded-xl text-left transition-all min-h-[44px]"
+          style={{ background: checked.has(i) ? 'rgba(52,211,153,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${checked.has(i) ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.07)'}` }}>
+          <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 text-xs"
+            style={{ background: checked.has(i) ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.06)', border: `1px solid ${checked.has(i) ? 'rgba(52,211,153,0.4)' : 'rgba(255,255,255,0.1)'}`, color: '#34d399' }}>
+            {checked.has(i) ? '✓' : ''}
+          </div>
+          <span className="font-body text-sm" style={{ color: checked.has(i) ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.65)', textDecoration: checked.has(i) ? 'line-through' : 'none' }}>
+            {item}
+          </span>
+        </button>
+      ))}
+      {checked.size === LISTING_CHECKLIST.length && (
+        <div className="text-center py-3 rounded-xl font-body text-sm font-semibold" style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399' }}>
+          Your listing is ready to go 🔥
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Tool 10: Price Drop Reminder
+function PriceDropReminder() {
+  const [items, setItems] = useState(() => { try { return JSON.parse(localStorage.getItem('fl_pdr') || '[]') } catch { return [] } })
+  const [form, setForm]   = useState({ name: '', price: '', platform: 'eBay', date: new Date().toISOString().split('T')[0] })
+
+  const save      = (next) => { setItems(next); localStorage.setItem('fl_pdr', JSON.stringify(next)) }
+  const addItem   = () => {
+    if (!form.name || !form.price) return
+    save([...items, { id: Date.now(), ...form, price: parseFloat(form.price) }])
+    setForm({ name: '', price: '', platform: 'eBay', date: new Date().toISOString().split('T')[0] })
+  }
+  const removeItem = (id) => save(items.filter(i => i.id !== id))
+  const isStale    = (d) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000) >= 21
+  const daysListed = (d) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
+  const dropPrice  = (p) => (p * 0.9).toFixed(2)
+
+  return (
+    <div className="space-y-4">
+      <p className="text-white/40 font-body text-xs">Items listed 21+ days automatically get flagged. Drop the price to move inventory.</p>
+      <div className="rounded-xl p-3 space-y-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <ToolInput label="Item name" value={form.name} onChange={v => setForm(p => ({...p, name: v}))} placeholder="Nike Air Force 1 Low" />
+        <div className="grid grid-cols-2 gap-2">
+          <ToolInput label="Listed price ($)" value={form.price} onChange={v => setForm(p => ({...p, price: v}))} type="number" placeholder="65.00" />
+          <div>
+            <label className="block text-white/40 font-body text-xs mb-1">Platform</label>
+            <select value={form.platform} onChange={e => setForm(p => ({...p, platform: e.target.value}))}
+              className="w-full px-3 py-2.5 rounded-xl text-sm font-body text-white outline-none"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              {['eBay','Depop','Poshmark','Mercari','FB'].map(pl => <option key={pl} value={pl} style={{ background: '#111' }}>{pl}</option>)}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-white/40 font-body text-xs mb-1">Date Listed</label>
+          <input type="date" value={form.date} onChange={e => setForm(p => ({...p, date: e.target.value}))}
+            className="w-full px-3 py-2.5 rounded-xl text-sm font-body text-white outline-none"
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', colorScheme: 'dark' }} />
+        </div>
+        <button onClick={addItem} className="w-full py-2.5 rounded-xl font-body font-bold text-sm text-dark btn-gold min-h-[40px]">Track This Item +</button>
+      </div>
+      {items.length > 0 && (
+        <div className="space-y-2">
+          {items.map(item => {
+            const stale = isStale(item.date)
+            const days  = daysListed(item.date)
+            return (
+              <div key={item.id} className="rounded-xl p-3"
+                style={{ background: stale ? 'rgba(239,68,68,0.05)' : 'rgba(255,255,255,0.02)', border: `1px solid ${stale ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.07)'}` }}>
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div>
+                    <div className="text-white/80 font-body text-sm font-semibold">{item.name}</div>
+                    <div className="text-white/30 font-body text-xs">{item.platform} · {days} day{days !== 1 ? 's' : ''} listed · ${item.price}</div>
+                  </div>
+                  <button onClick={() => removeItem(item.id)} className="text-white/20 hover:text-white/50 text-xs px-2 py-1 rounded min-h-[28px]">✕</button>
+                </div>
+                {stale && (
+                  <div className="flex items-center justify-between gap-2 mt-2 px-3 py-2 rounded-lg"
+                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                    <span className="text-xs font-body font-bold" style={{ color: '#ef4444' }}>🔴 Drop the price</span>
+                    <span className="text-xs font-body font-semibold" style={{ color: '#ef4444' }}>Try ${dropPrice(item.price)}</span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ToolsSection({ userTier }) {
   return (
     <div className="space-y-4">
@@ -930,6 +1144,14 @@ function ToolsSection({ userTier }) {
 
         <ToolCard title="Resell Profit Journal" icon="📒" description="Log every sale, track totals, export to CSV" tier="pro" userTier={userTier}>
           <ProfitJournal />
+        </ToolCard>
+
+        <ToolCard title="Pre-Listing Seller Checklist" icon="✅" description="11-point checklist — make sure every listing is optimized before posting" tier="free" userTier={userTier}>
+          <SellerChecklist />
+        </ToolCard>
+
+        <ToolCard title="Price Drop Reminder" icon="🔴" description="Track listed items — flags anything listed 21+ days and suggests a 10% price drop" tier="free" userTier={userTier}>
+          <PriceDropReminder />
         </ToolCard>
       </motion.div>
     </div>
@@ -1041,6 +1263,131 @@ function MilestonesSection({ userTier, completedMilestones, onToggleMilestone, b
   )
 }
 
+// ─── Seven Day Plan ───────────────────────────────────────────────────────────
+
+function SevenDayPlan() {
+  const [checked, setChecked] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('fl_7day') || '[]')) } catch { return new Set() }
+  })
+  const [celebrating, setCelebrating] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('fl_7day') || '[]').length === 7 } catch { return false }
+  })
+
+  const toggle = (i) => {
+    setChecked(prev => {
+      const next = new Set(prev)
+      next.has(i) ? next.delete(i) : next.add(i)
+      localStorage.setItem('fl_7day', JSON.stringify([...next]))
+      if (next.size === 7) setCelebrating(true)
+      return next
+    })
+  }
+
+  const pct = (checked.size / 7) * 100
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+      className="rounded-2xl p-4 space-y-3"
+      style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.15)' }}>
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-lg text-white">Your First <span className="gold-text">7 Days</span></h3>
+        <span className="text-xs font-body text-white/40">{checked.size}/7 done</span>
+      </div>
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+        <motion.div animate={{ width: `${pct}%` }} transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="h-full rounded-full" style={{ background: 'linear-gradient(to right,#FFE566,#FFD700,#FFA500)' }} />
+      </div>
+      {celebrating && (
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+          className="rounded-xl p-3 text-center milestone-burst"
+          style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.35)' }}>
+          <p className="font-body font-bold text-sm" style={{ color: '#FFD700' }}>You crushed your first week 🔥</p>
+        </motion.div>
+      )}
+      <div className="space-y-2">
+        {SEVEN_DAYS.map((task, i) => (
+          <button key={i} onClick={() => toggle(i)}
+            className="w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left transition-all min-h-[48px]"
+            style={{ background: checked.has(i) ? 'rgba(52,211,153,0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${checked.has(i) ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.06)'}` }}>
+            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs transition-all"
+              style={{ background: checked.has(i) ? 'rgba(52,211,153,0.25)' : 'rgba(255,255,255,0.05)', border: `1px solid ${checked.has(i) ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.12)'}`, color: '#34d399' }}>
+              {checked.has(i) ? '✓' : <span className="text-white/30 font-body text-[9px]">{i+1}</span>}
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-white/25 font-body text-[10px] uppercase tracking-widest">Day {i+1}</span>
+              <p className="font-body text-sm leading-snug mt-0.5"
+                style={{ color: checked.has(i) ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)', textDecoration: checked.has(i) ? 'line-through' : 'none' }}>
+                {task}
+              </p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
+// ─── Motivation Wall ──────────────────────────────────────────────────────────
+
+function MotivationWall() {
+  const [feed, setFeed] = useState(() =>
+    WINS_FEED_DATA.slice(0, 6).map((w, i) => ({ ...w, id: i, ago: i === 0 ? 'just now' : `${(i + 1) * 4}m ago` }))
+  )
+
+  useEffect(() => {
+    const next = () => {
+      const w = WINS_FEED_DATA[Math.floor(Math.random() * WINS_FEED_DATA.length)]
+      setFeed(prev => [{ ...w, id: Date.now(), ago: 'just now' }, ...prev.slice(0, 9)])
+    }
+    const id = setInterval(next, 45000 + Math.random() * 30000)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
+      className="rounded-2xl overflow-hidden"
+      style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,215,0,0.1)' }}>
+      <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+        <h3 className="font-display text-base text-white">Recent Wins <span style={{ color: '#FFD700' }}>🔥</span></h3>
+        <div className="flex items-center gap-1.5">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-70" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          </span>
+          <span className="text-white/30 font-body text-xs">Live</span>
+        </div>
+      </div>
+      <div className="max-h-52 overflow-y-auto">
+        <AnimatePresence initial={false}>
+          {feed.map(w => (
+            <motion.div key={w.id}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25 }}
+              className="flex items-center gap-3 px-4 py-2.5 border-b"
+              style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-dark font-display text-sm flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg,#FFE566,#FFD700,#FFA500)' }}>
+                {w.name[0]}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-white/70 font-body text-xs font-semibold leading-tight truncate">
+                  {w.name} <span className="text-white/30 font-normal">from {w.location}</span>
+                </div>
+                <div className="text-white/35 font-body text-xs">
+                  joined <span style={{ color: '#FFD700' }} className="font-semibold">{w.plan}</span>
+                </div>
+              </div>
+              <span className="text-white/20 font-body text-[10px] flex-shrink-0">{w.ago}</span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── Home section ─────────────────────────────────────────────────────────────
 
 const today = new Date().getDate() - 1
@@ -1119,6 +1466,9 @@ function HomeSection({ member, setTab, completed, completedMilestones }) {
         )}
       </AnimatePresence>
 
+      {/* 7-day plan */}
+      <SevenDayPlan />
+
       {/* Quick actions */}
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
         <p className="text-white/25 font-body text-xs uppercase tracking-widest mb-3">Quick Access</p>
@@ -1134,6 +1484,9 @@ function HomeSection({ member, setTab, completed, completedMilestones }) {
           ))}
         </div>
       </motion.div>
+
+      {/* Motivation wall */}
+      <MotivationWall />
 
       {/* What to focus on next */}
       {nextLesson && (
@@ -1192,6 +1545,76 @@ function HomeSection({ member, setTab, completed, completedMilestones }) {
   )
 }
 
+// ─── Resell Glossary ──────────────────────────────────────────────────────────
+
+function ResellGlossary() {
+  const [search, setSearch] = useState('')
+  const filtered = search
+    ? GLOSSARY.filter(g => g.term.toLowerCase().includes(search.toLowerCase()) || g.def.toLowerCase().includes(search.toLowerCase()))
+    : GLOSSARY
+
+  return (
+    <div className="space-y-3 mt-6">
+      <div className="border-t pt-6" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+        <h2 className="font-display text-xl text-white mb-0.5">Resell <span className="gold-text">Glossary</span></h2>
+        <p className="text-white/40 font-body text-sm mb-3">Every term you need to know.</p>
+        <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Search terms…"
+          className="w-full px-4 py-3 rounded-xl font-body text-sm text-white placeholder-white/20 outline-none"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }} />
+      </div>
+      <div className="space-y-1.5">
+        {filtered.map(g => (
+          <div key={g.term} className="flex gap-3 px-4 py-3 rounded-xl"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <span className="font-body font-bold text-sm flex-shrink-0" style={{ color: '#FFD700', minWidth: 100 }}>{g.term}</span>
+            <span className="text-white/55 font-body text-sm leading-snug">{g.def}</span>
+          </div>
+        ))}
+        {filtered.length === 0 && <p className="text-white/30 font-body text-sm text-center py-4">No terms match "{search}"</p>}
+      </div>
+    </div>
+  )
+}
+
+// ─── Platform Comparison ──────────────────────────────────────────────────────
+
+function PlatformComparison() {
+  return (
+    <div className="space-y-3 mt-6">
+      <div className="border-t pt-6" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+        <h2 className="font-display text-xl text-white mb-0.5">Platform <span className="gold-text">Comparison</span></h2>
+        <p className="text-white/40 font-body text-sm mb-3">Know where to sell before you list. Scroll to see all →</p>
+      </div>
+      <div className="flex gap-3 pb-3 -mx-1 px-1" style={{ overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}>
+        {PLATFORMS_DATA.map(p => (
+          <div key={p.name} className="rounded-2xl p-4 flex-shrink-0"
+            style={{ width: 210, scrollSnapAlign: 'start', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,215,0,0.12)' }}>
+            <div className="font-display text-lg gold-text mb-3">{p.name}</div>
+            {[
+              { l: 'Best for',   v: p.bestFor },
+              { l: 'Seller fee', v: p.fee },
+              { l: 'Shipping',   v: p.shipping },
+              { l: 'Payout',     v: p.payout },
+              { l: 'Difficulty', v: p.difficulty },
+              { l: 'Buyer age',  v: p.buyers },
+            ].map(r => (
+              <div key={r.l} className="mb-2">
+                <div className="text-white/25 font-body text-[9px] uppercase tracking-widest">{r.l}</div>
+                <div className="text-white/70 font-body text-xs font-medium leading-snug">{r.v}</div>
+              </div>
+            ))}
+            <div className="mt-2 pt-2 space-y-1" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <p className="text-[11px] font-body font-medium" style={{ color: '#34d399' }}>✓ {p.pro}</p>
+              <p className="text-[11px] font-body font-medium" style={{ color: '#ef4444' }}>✕ {p.con}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Account section ──────────────────────────────────────────────────────────
 
 function AccountSection({ member, onManageBilling, onSignOut }) {
@@ -1226,6 +1649,37 @@ function AccountSection({ member, onManageBilling, onSignOut }) {
         </p>
       </motion.div>
 
+      {/* Upgrade comparison card — hidden for pro and admin */}
+      {member.tier !== 'pro' && member.tier !== 'admin' && (() => {
+        const nextTier = TIER_NEXT[member.tier]
+        const features = UPGRADE_FEATURES[nextTier] || []
+        const price    = PLAN_PRICES[nextTier] || ''
+        const name     = nextTier ? nextTier.charAt(0).toUpperCase() + nextTier.slice(1) : ''
+        return (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+            className="rounded-2xl p-5 space-y-4"
+            style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.2)' }}>
+            <div>
+              <div className="text-white/35 font-body text-[10px] uppercase tracking-widest mb-1">Next step</div>
+              <h3 className="font-display text-xl text-white">{name} Plan <span className="text-white/30 font-body text-sm font-normal">— {price}</span></h3>
+            </div>
+            <ul className="space-y-2">
+              {features.map((f, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <span className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[9px] mt-0.5"
+                    style={{ background: 'rgba(255,215,0,0.15)', border: '1px solid rgba(255,215,0,0.3)', color: '#FFD700' }}>✓</span>
+                  <span className="text-white/60 font-body text-sm leading-snug">{f}</span>
+                </li>
+              ))}
+            </ul>
+            <a href="/#plans"
+              className="btn-gold w-full py-3 rounded-full text-dark font-body font-bold text-sm flex items-center justify-center min-h-[48px] active:scale-[0.97] transition-transform">
+              Upgrade to {name} →
+            </a>
+          </motion.div>
+        )
+      })()}
+
       <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
         onClick={onSignOut}
         className="w-full py-3.5 rounded-xl font-body text-sm text-white/40 hover:text-white/70 transition-colors min-h-[48px]"
@@ -1233,6 +1687,90 @@ function AccountSection({ member, onManageBilling, onSignOut }) {
         Sign Out / Clear Access
       </motion.button>
     </div>
+  )
+}
+
+// ─── Onboarding Modal ─────────────────────────────────────────────────────────
+
+const ONBOARDING_STEPS = [
+  {
+    emoji: '👋',
+    title: 'Welcome to the platform',
+    body: "Here's how to get started in 60 seconds. We'll walk you through the 3 most important things to do first.",
+    hint: '📚 Start in the Learn tab — your first lessons are free',
+  },
+  {
+    emoji: '🏪',
+    title: 'Your vendors are waiting',
+    body: 'Check the Vendors tab for your free jewelry vendors — no payment needed. More categories unlock when you upgrade.',
+    hint: '🏪 Vendors tab is live right now, no upgrade needed',
+  },
+  {
+    emoji: '🎯',
+    title: 'Your first goal',
+    body: 'Complete Day 1 of your 7-day quick start plan. It takes 10 minutes and sets you up for your first sale.',
+    hint: '🏠 Find the plan on the Home tab',
+  },
+]
+
+function OnboardingModal({ onClose, setTab }) {
+  const [step, setStep] = useState(0)
+  const current = ONBOARDING_STEPS[step]
+  const isLast  = step === ONBOARDING_STEPS.length - 1
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center px-4"
+      style={{ background: 'rgba(0,0,0,0.88)' }}>
+      <motion.div
+        initial={{ y: 60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 240 }}
+        className="w-full max-w-sm rounded-t-3xl sm:rounded-2xl p-6 space-y-5"
+        style={{ background: '#0f0f0f', border: '1px solid rgba(255,215,0,0.2)' }}>
+        {/* Progress dots + skip */}
+        <div className="flex items-center justify-between">
+          <div className="flex gap-1.5">
+            {ONBOARDING_STEPS.map((_, i) => (
+              <div key={i} className="rounded-full transition-all duration-300"
+                style={{ width: i === step ? 20 : 6, height: 6, background: i === step ? '#FFD700' : 'rgba(255,255,255,0.15)' }} />
+            ))}
+          </div>
+          <button onClick={onClose}
+            className="text-white/30 hover:text-white/60 text-xs font-body px-3 py-1.5 rounded-lg transition-colors"
+            style={{ background: 'rgba(255,255,255,0.05)' }}>
+            Skip
+          </button>
+        </div>
+
+        {/* Step content */}
+        <AnimatePresence mode="wait">
+          <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
+            className="space-y-3">
+            <div className="text-4xl">{current.emoji}</div>
+            <h2 className="font-display text-2xl text-white">{current.title}</h2>
+            <p className="text-white/55 font-body text-sm leading-relaxed">{current.body}</p>
+            <div className="px-3 py-2.5 rounded-xl" style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.18)' }}>
+              <p className="font-body text-xs font-semibold" style={{ color: '#FFD700' }}>{current.hint}</p>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* CTA */}
+        {isLast ? (
+          <button onClick={() => { setTab('home'); onClose() }}
+            className="w-full py-4 rounded-full font-body font-bold text-sm text-dark btn-gold min-h-[52px]">
+            Let's go 🔥
+          </button>
+        ) : (
+          <button onClick={() => setStep(s => s + 1)}
+            className="w-full py-4 rounded-full font-body font-bold text-sm text-dark btn-gold min-h-[52px]">
+            Next →
+          </button>
+        )}
+      </motion.div>
+    </motion.div>
   )
 }
 
@@ -1409,6 +1947,7 @@ export default function Dashboard() {
   const [burst, setBurst]                             = useState(null)
   const [activeLesson, setActiveLesson]               = useState(null)
   const [activeLessonModule, setActiveLessonModule]   = useState(null)
+  const [showOnboarding, setShowOnboarding]           = useState(false)
 
   // Flat list of all accessible lessons for Next Lesson navigation
   const allAccessibleLessons = member
@@ -1473,6 +2012,15 @@ export default function Dashboard() {
         else { setError('Could not connect. Check your connection.'); setLoading(false) }
       })
   }, [])
+
+  useEffect(() => {
+    if (member && !localStorage.getItem('fl_onboarding_done')) setShowOnboarding(true)
+  }, [member])
+
+  const handleCloseOnboarding = () => {
+    localStorage.setItem('fl_onboarding_done', '1')
+    setShowOnboarding(false)
+  }
 
   const markComplete = useCallback(lessonId => {
     setCompleted(prev => {
@@ -1597,7 +2145,7 @@ export default function Dashboard() {
                 <div className="space-y-3">
                   {member.content.lockedCategories.map((cat, i) => {
                     const c = typeof cat === 'string' ? LOCKED_CATS[cat] : cat
-                    return c ? <LockedCatCard key={c.name} cat={c} i={i} total={member.content.categories.length} /> : null
+                    return c ? <LockedCatCard key={c.name} cat={c} i={i} total={member.content.categories.length} userTier={member.tier} /> : null
                   })}
                 </div>
               </>
@@ -1614,13 +2162,15 @@ export default function Dashboard() {
                 {completed.size} of {COURSE_MODULES.reduce((a, m) => a + m.lessons.length, 0)} lessons completed.
               </p>
             </motion.div>
-            <div className="space-y-3">
+            <PlatformComparison />
+            <div className="space-y-3 mt-2">
               {COURSE_MODULES.map((mod, i) => (
                 <motion.div key={mod.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}>
                   <ModuleCard mod={mod} userTier={member.tier} completed={completed} onSelectLesson={openLesson} />
                 </motion.div>
               ))}
             </div>
+            <ResellGlossary />
           </div>
         )
 
@@ -1681,7 +2231,7 @@ export default function Dashboard() {
       {/* Mobile bottom tab bar */}
       <motion.div initial={{ y: 80 }} animate={{ y: 0 }} transition={{ type: 'spring', damping: 22, stiffness: 200 }}
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex"
-        style={{ background: 'rgba(8,8,8,0.98)', borderTop: '1px solid rgba(255,215,0,0.1)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        style={{ background: 'rgba(8,8,8,0.98)', borderTop: '1px solid rgba(255,215,0,0.1)', paddingBottom: 'env(safe-area-inset-bottom)', transform: 'translateZ(0)', willChange: 'transform' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[60px] transition-all active:scale-[0.93]"
@@ -1692,6 +2242,11 @@ export default function Dashboard() {
           </button>
         ))}
       </motion.div>
+
+      {/* Onboarding modal */}
+      <AnimatePresence>
+        {showOnboarding && <OnboardingModal onClose={handleCloseOnboarding} setTab={setTab} />}
+      </AnimatePresence>
 
       {/* Lesson modal */}
       <AnimatePresence>

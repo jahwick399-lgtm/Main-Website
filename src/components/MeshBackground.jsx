@@ -2,9 +2,8 @@ export default function MeshBackground() {
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden>
       <div className="mesh-bg absolute inset-0" />
-      {/* Floating ambient orbs */}
       <div
-        className="absolute rounded-full"
+        className="mesh-orb absolute rounded-full"
         style={{
           width: 700, height: 700,
           top: '-15%', left: '30%',
@@ -14,7 +13,7 @@ export default function MeshBackground() {
         }}
       />
       <div
-        className="absolute rounded-full"
+        className="mesh-orb absolute rounded-full"
         style={{
           width: 500, height: 500,
           bottom: '10%', right: '-5%',
@@ -24,7 +23,7 @@ export default function MeshBackground() {
         }}
       />
       <div
-        className="absolute rounded-full"
+        className="mesh-orb absolute rounded-full"
         style={{
           width: 400, height: 300,
           top: '50%', left: '-5%',

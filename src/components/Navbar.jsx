@@ -45,9 +45,10 @@ export default function Navbar() {
   const hasAccess = !!getSession()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50)
+    let t
+    const onScroll = () => { clearTimeout(t); t = setTimeout(() => setScrolled(window.scrollY > 50), 16) }
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(t) }
   }, [])
 
   const handleRestoreAccess = () => navigate('/dashboard')
@@ -58,6 +59,7 @@ export default function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${scrolled ? 'nav-glass' : 'bg-transparent'}`}
+      style={{ transform: 'translateZ(0)', willChange: 'transform' }}
     >
       <div className="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between">
         {/* Logo */}
