@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getSession } from '../utils/auth'
 
 const VENDORS_URL = 'https://vendor-website-two.vercel.app/?canceled=true#vendors'
 
@@ -41,7 +42,7 @@ export default function Navbar() {
   const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const hasAccess = !!localStorage.getItem('rm_subscription')
+  const hasAccess = !!getSession()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50)
@@ -98,7 +99,7 @@ export default function Navbar() {
               My Dashboard →
             </button>
           ) : (
-            <a href="#plans" className="btn-gold-outline px-5 py-2 rounded-full text-sm">
+            <a href="/signup" className="btn-gold-outline px-5 py-2 rounded-full text-sm">
               Get Started
             </a>
           )}
@@ -157,7 +158,7 @@ export default function Navbar() {
                 </button>
               )}
               {!hasAccess && (
-                <a href="#plans" onClick={() => setMenuOpen(false)}
+                <a href="/signup" onClick={() => setMenuOpen(false)}
                    className="btn-gold text-center py-2.5 rounded-full text-dark font-body font-bold text-sm">
                   Get Started
                 </a>

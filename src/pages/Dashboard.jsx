@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { COURSE_MODULES, canAccess } from '../data/courseContent'
 import { MILESTONES } from '../data/milestones'
+import { getSession, clearSession } from '../utils/auth'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -231,10 +232,41 @@ function LessonModal({ lesson, module: mod, allLessons, lessonIndex, onClose, on
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 p-5">
-          {lesson.body.split('\n\n').map((para, i) => (
-            <p key={i} className="text-white/65 font-body text-sm leading-relaxed mb-4">{para}</p>
-          ))}
+        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+          {/* Hook */}
+          <p className="font-body font-bold text-white text-base leading-snug">{lesson.hook}</p>
+
+          {/* The Point */}
+          <div>
+            <div className="text-white/25 font-body text-[10px] uppercase tracking-widest mb-1">The Point</div>
+            <p className="text-white/60 font-body text-sm leading-relaxed">{lesson.point}</p>
+          </div>
+
+          {/* Key Steps */}
+          <div>
+            <div className="text-white/25 font-body text-[10px] uppercase tracking-widest mb-2">Key Steps</div>
+            <ul className="space-y-2">
+              {lesson.steps.map((step, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-display mt-0.5"
+                    style={{ background: 'rgba(255,215,0,0.12)', color: '#FFD700', border: '1px solid rgba(255,215,0,0.25)' }}>
+                    {i + 1}
+                  </span>
+                  <span className="text-white/65 font-body text-sm leading-snug">{step}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Pro Tip */}
+          <div className="rounded-xl p-3.5 flex items-start gap-3"
+            style={{ background: 'rgba(255,215,0,0.06)', border: '1px solid rgba(255,215,0,0.2)' }}>
+            <span className="text-lg flex-shrink-0">💡</span>
+            <div>
+              <div className="text-white/35 font-body text-[10px] uppercase tracking-widest mb-1">Pro Tip</div>
+              <p className="font-body text-sm font-semibold leading-snug" style={{ color: '#FFD700' }}>{lesson.proTip}</p>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
@@ -405,8 +437,16 @@ function ProfitCalculator() {
   const margin      = saleN > 0 ? (profit / saleN) * 100 : 0
   const roi         = costN > 0 ? (profit / costN) * 100 : 0
 
-  const color = profit > 0 ? '#34d399' : profit < 0 ? '#ef4444' : 'rgba(255,255,255,0.5)'
-  const verdict = profit > 5 ? "✅ Worth it — flip it" : profit > 0 ? "🟡 Tight margin — be careful" : saleN === 0 ? "Enter your numbers above" : "❌ Not profitable — reprice or pass"
+  const getVerdict = (p) => {
+    if (saleN === 0) return { text: 'Enter your numbers above', color: 'rgba(255,255,255,0.35)', glow: false }
+    if (p < 0)    return { text: "You're losing money ❌ — Do not flip this",      color: '#ef4444', glow: false }
+    if (p < 10)   return { text: "Not worth your time ⚠️ — Too low to bother",     color: '#ef4444', glow: false }
+    if (p < 20)   return { text: "Slim margin 😐 — Only if you can move volume",   color: '#f97316', glow: false }
+    if (p < 40)   return { text: "Decent flip 👍 — Worth doing",                   color: '#34d399', glow: false }
+    if (p < 75)   return { text: "Good profit 🔥 — Go for it",                     color: '#34d399', glow: true  }
+    return              { text: "Great flip 💰 — Stack as many as you can",        color: '#FFD700', glow: true  }
+  }
+  const verdict = getVerdict(profit)
 
   return (
     <div className="space-y-3">
@@ -416,10 +456,15 @@ function ProfitCalculator() {
         <ToolInput label="Shipping cost ($)" value={ship} onChange={setShip} type="number" placeholder="5.00" />
         <ToolInput label="Sale price ($)" value={sale} onChange={setSale} type="number" placeholder="45.00" />
       </div>
-      <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="rounded-xl p-4 space-y-2 transition-all duration-300"
+        style={{
+          background: verdict.glow ? 'rgba(255,215,0,0.04)' : 'rgba(255,255,255,0.03)',
+          border: verdict.glow ? '1px solid rgba(255,215,0,0.25)' : '1px solid rgba(255,255,255,0.08)',
+          boxShadow: verdict.glow ? '0 0 20px rgba(255,215,0,0.12)' : 'none',
+        }}>
         <div className="flex justify-between">
           <span className="text-white/40 font-body text-sm">Net profit</span>
-          <span className="font-body font-bold text-base" style={{ color }}>${profit.toFixed(2)}</span>
+          <span className="font-body font-bold text-base" style={{ color: verdict.color }}>${profit.toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-white/40 font-body text-sm">Margin</span>
@@ -430,7 +475,7 @@ function ProfitCalculator() {
           <span className="font-body text-sm text-white/70">{roi.toFixed(1)}%</span>
         </div>
         <div className="pt-2 border-t" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-          <p className="font-body text-sm text-center font-semibold" style={{ color }}>{verdict}</p>
+          <p className="font-body text-sm text-center font-semibold" style={{ color: verdict.color }}>{verdict.text}</p>
         </div>
       </div>
     </div>
@@ -1222,11 +1267,13 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
+    const session = getSession()
+    if (!session) { navigate('/login', { replace: true }); return }
+
     const stored = localStorage.getItem('rm_subscription')
     if (!stored) {
-      // No paid subscription — load as free tier
-      localStorage.setItem('rm_free_tier', 'true')
-      setMember(FREE_MEMBER)
+      const freeMember = { ...FREE_MEMBER, customerEmail: session.email, tier: session.tier === 'free' ? 'free' : session.tier }
+      setMember(freeMember)
       setLoading(false)
       return
     }
@@ -1235,14 +1282,14 @@ export default function Dashboard() {
     fetch(`${API}/subscription-status?sub_id=${parsed.subscriptionId}`)
       .then(r => r.json())
       .then(data => {
-        if (data.error) { localStorage.removeItem('rm_subscription'); setMember(FREE_MEMBER); setLoading(false); return }
-        const fresh = { ...parsed, ...data, verifiedAt: Date.now() }
+        if (data.error) { localStorage.removeItem('rm_subscription'); setMember({ ...FREE_MEMBER, customerEmail: session.email }); setLoading(false); return }
+        const fresh = { ...parsed, ...data, verifiedAt: Date.now(), customerEmail: session.email }
         localStorage.setItem('rm_subscription', JSON.stringify(fresh))
         setMember(fresh); setLoading(false)
       })
       .catch(() => {
         const age = Date.now() - (parsed.verifiedAt || 0)
-        if (age < 3600000 && parsed.content) { setMember(parsed); setLoading(false) }
+        if (age < 3600000 && parsed.content) { setMember({ ...parsed, customerEmail: session.email }); setLoading(false) }
         else { setError('Could not connect. Check your connection.'); setLoading(false) }
       })
   }, [])
@@ -1287,9 +1334,8 @@ export default function Dashboard() {
   }
 
   const handleSignOut = () => {
-    localStorage.removeItem('rm_subscription')
-    localStorage.removeItem('rm_free_tier')
-    navigate('/')
+    clearSession()
+    navigate('/login', { replace: true })
   }
 
   // Loading state
@@ -1325,9 +1371,41 @@ export default function Dashboard() {
               <h2 className="font-display text-2xl sm:text-3xl text-white mb-1">My <span className="gold-text">Vendors</span></h2>
               <p className="text-white/40 font-body text-sm">Tap any category to see individual suppliers.</p>
             </motion.div>
-            <div className="space-y-3">
-              {member.content.categories.map((cat, i) => <VendorCategoryCard key={cat.id} cat={cat} index={i} />)}
-            </div>
+
+            {/* Free vendors — always visible */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+              className="rounded-2xl p-4" style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.2)' }}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>FREE</span>
+                <h3 className="font-display text-base text-white">Free Vendors — Start Here 💎</h3>
+              </div>
+              <p className="text-white/35 font-body text-xs mb-4">These are yours free. No payment needed.</p>
+              <div className="space-y-3">
+                {[
+                  { name: 'Jewelry Vendor 1', category: 'Jewelry', url: 'https://jewelryresell.com' },
+                  { name: 'Jewelry Vendor 2', category: 'Jewelry', url: 'https://www.moissanitesupply.net' },
+                ].map((v, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                    style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.12)' }}>
+                    <div>
+                      <div className="text-white/80 font-body text-sm font-semibold">{v.name}</div>
+                      <div className="text-white/30 font-body text-xs">{v.category}</div>
+                    </div>
+                    <a href={v.url} target="_blank" rel="noopener noreferrer"
+                      className="flex-shrink-0 px-3 py-2 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center"
+                      style={{ background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.3)', color: '#34d399' }}>
+                      Access Vendor →
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {member.content.categories.length > 0 && (
+              <div className="space-y-3">
+                {member.content.categories.map((cat, i) => <VendorCategoryCard key={cat.id} cat={cat} index={i} />)}
+              </div>
+            )}
             {member.content.lockedCategories?.length > 0 && (
               <>
                 <p className="text-white/25 font-body text-xs uppercase tracking-widest pt-2">Upgrade to unlock</p>

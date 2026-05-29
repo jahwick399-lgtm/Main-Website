@@ -141,7 +141,7 @@ export default function Hero() {
         style={{ maxWidth: 380 }}
       >
         <a
-          href="#plans"
+          href="/signup"
           className="btn-gold rounded-full text-dark font-body font-bold text-base text-center active:scale-[0.97] transition-transform"
           style={{ padding: '15px 24px', minHeight: 52 }}
         >

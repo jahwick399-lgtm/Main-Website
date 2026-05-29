@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { getSession } from './utils/auth'
 import CursorDot from './components/CursorDot'
 import GoldParticles from './components/GoldParticles'
 import MeshBackground from './components/MeshBackground'
@@ -18,6 +19,17 @@ import ScrollProgress from './components/ScrollProgress'
 import BackToTop from './components/BackToTop'
 import Success from './pages/Success'
 import Dashboard from './pages/Dashboard'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import Admin from './pages/Admin'
+
+function ProtectedRoute({ children, requireAdmin = false }) {
+  const session = getSession()
+  if (!session) return <Navigate to="/login" replace />
+  if (requireAdmin && session.tier !== 'admin') return <Navigate to="/dashboard" replace />
+  if (!requireAdmin && session.tier === 'admin') return <Navigate to="/admin" replace />
+  return children
+}
 
 function LandingPage() {
   return (
@@ -50,8 +62,11 @@ export default function App() {
       <CursorDot />
       <Routes>
         <Route path="/"          element={<LandingPage />} />
+        <Route path="/login"     element={<Login />} />
+        <Route path="/signup"    element={<Signup />} />
         <Route path="/success"   element={<Success />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/admin"     element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )

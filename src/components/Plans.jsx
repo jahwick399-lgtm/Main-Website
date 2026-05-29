@@ -240,7 +240,7 @@ function PlanCard({ plan, i }) {
         </button>
       ) : (
         <a
-          href="/dashboard"
+          href="/signup"
           className="w-full text-center rounded-full text-sm font-body font-bold tracking-wide btn-gold-outline flex items-center justify-center"
           style={{ padding: '15px 24px', minHeight: 52 }}
         >
