@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getSession } from '../utils/auth'
+import logoImg from '../Public/logo.png'
 
 const VENDORS_URL = 'https://vendor-website-two.vercel.app/?canceled=true#vendors'
 
@@ -63,15 +64,8 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-dark font-display text-lg"
-               style={{ background: 'linear-gradient(135deg,#FFE566,#FFD700,#FFA500)', boxShadow: '0 0 14px rgba(255,215,0,0.5)' }}>
-            F
-          </div>
-          <span className="font-display text-2xl tracking-wider">
-            <span className="gold-text">FLIP</span>
-            <span className="text-white"> LABS</span>
-          </span>
+        <a href="/" className="flex items-center group">
+          <img src={logoImg} alt="Flip Labs" className="h-12 w-auto object-contain" />
         </a>
 
         {/* Desktop nav */}
