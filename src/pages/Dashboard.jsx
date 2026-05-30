@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { COURSE_MODULES, canAccess } from '../data/courseContent'
+import { ALL_VENDORS } from '../data/vendorData'
 import { MILESTONES } from '../data/milestones'
 import { getSession, clearSession, getUsers, updateUserTier } from '../utils/auth'
 
@@ -189,55 +190,130 @@ function Logo() {
 
 // ─── Vendor section ───────────────────────────────────────────────────────────
 
-function VendorItemCard({ item, categoryName, categoryIcon, showCategory = false }) {
-  const isSheet = !!item.isSheet
+const CAT_META = {
+  Electronics: { icon: '📱' },
+  Fragrance:   { icon: '🌹' },
+  Clothing:    { icon: '👕' },
+  Shoes:       { icon: '👟' },
+  Jewelry:     { icon: '💎' },
+  Watches:     { icon: '⌚' },
+}
+const CAT_ORDER = ['Electronics', 'Fragrance', 'Clothing', 'Shoes', 'Jewelry', 'Watches']
+
+function canAccessVendor(vendorTier, userTier) {
+  if (vendorTier === 'free') return true
+  if (userTier === 'admin' || userTier === 'pro') return true
+  if (userTier === 'intermediate') return vendorTier === 'beginner' || vendorTier === 'intermediate'
+  if (userTier === 'beginner') return vendorTier === 'beginner'
+  return false
+}
+
+function VendorCard({ vendor, userTier, showCategory }) {
+  const accessible = canAccessVendor(vendor.tier, userTier)
+  const tierBadge  = vendor.tier === 'intermediate'
+    ? { bg: 'rgba(255,215,0,0.12)',   text: '#FFD700',  border: 'rgba(255,215,0,0.3)',   label: 'INTERMEDIATE' }
+    : vendor.tier === 'beginner'
+    ? { bg: 'rgba(96,165,250,0.12)',  text: '#60a5fa',  border: 'rgba(96,165,250,0.3)',  label: 'BEGINNER' }
+    : { bg: 'rgba(52,211,153,0.12)',  text: '#34d399',  border: 'rgba(52,211,153,0.3)',  label: 'FREE' }
+
+  const icon = CAT_META[vendor.category]?.icon || '🏪'
+
+  if (!accessible) {
+    const price    = PLAN_PRICES[vendor.tier] || '$29.99/mo'
+    const planName = vendor.tier.charAt(0).toUpperCase() + vendor.tier.slice(1)
+    return (
+      <div className="rounded-2xl overflow-hidden relative select-none"
+        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', minHeight: 108 }}>
+        {/* blurred content */}
+        <div className="p-4 flex flex-col gap-3" style={{ filter: 'blur(5px)', pointerEvents: 'none' }}>
+          <div className="font-body font-semibold text-white text-sm">{vendor.name}</div>
+          {vendor.price && (
+            <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full w-fit"
+              style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399' }}>{vendor.price}</span>
+          )}
+          <div className="w-full py-2.5 rounded-full text-xs font-body font-bold text-center"
+            style={{ background: 'rgba(255,215,0,0.1)', color: '#FFD700' }}>Access Vendor →</div>
+        </div>
+        {/* lock overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
+          <span className="text-2xl">🔒</span>
+          <span className="text-[10px] font-body font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+            style={{ background: tierBadge.bg, color: tierBadge.text, border: `1px solid ${tierBadge.border}` }}>
+            {planName} — {price}
+          </span>
+          <a href="/#plans"
+            className="px-3 py-1.5 rounded-full text-xs font-body font-bold whitespace-nowrap mt-1"
+            style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', color: '#FFD700' }}>
+            Upgrade →
+          </a>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-2xl p-4 flex flex-col gap-3"
-      style={{
-        background: isSheet ? 'rgba(255,215,0,0.04)' : 'rgba(255,255,255,0.025)',
-        border: isSheet ? '1px solid rgba(255,215,0,0.28)' : '1px solid rgba(255,215,0,0.1)',
-        minHeight: 108,
-      }}>
-      {isSheet && <div className="text-xl leading-none">📋</div>}
+      style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,215,0,0.1)', minHeight: 108 }}>
       <div className="flex-1 min-w-0">
-        <div className="font-body font-semibold text-white text-sm leading-snug">{item.name}</div>
+        <div className="font-body font-semibold text-white text-sm leading-snug">{vendor.name}</div>
         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-          {item.price && (
+          {vendor.price && (
             <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full"
               style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
-              {item.price}
+              {vendor.price}
             </span>
           )}
-          {showCategory && categoryName && (
+          {vendor.subcategory && (
+            <span className="text-[10px] font-body px-1.5 py-0.5 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              {vendor.subcategory}
+            </span>
+          )}
+          {showCategory && (
             <span className="text-[10px] font-body px-1.5 py-0.5 rounded-full"
               style={{ background: 'rgba(255,215,0,0.08)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              {categoryIcon} {categoryName}
+              {icon} {vendor.category}
             </span>
           )}
         </div>
       </div>
-      <a href={item.url} target="_blank" rel="noopener noreferrer"
+      <a href={vendor.url} target="_blank" rel="noopener noreferrer"
         className="w-full py-2.5 rounded-full text-xs font-body font-bold text-center flex items-center justify-center min-h-[36px]"
         style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.25)', color: '#FFD700' }}>
-        {isSheet ? 'Open Spreadsheet ↗' : 'Access Vendor →'}
+        Access Vendor →
       </a>
     </div>
   )
 }
 
-function VendorCategoryCard({ cat, index }) {
+function CategoryAccordion({ category, vendors, userTier, index }) {
   const [open, setOpen] = useState(false)
+  const icon       = CAT_META[category]?.icon || '🏪'
+  const allLocked  = vendors.every(v => !canAccessVendor(v.tier, userTier))
+  const catTier    = vendors[0]?.tier || 'beginner'
+  const tierBadge  = catTier === 'intermediate'
+    ? { bg: 'rgba(255,215,0,0.12)',  text: '#FFD700', border: 'rgba(255,215,0,0.3)',  label: 'INTERMEDIATE' }
+    : { bg: 'rgba(96,165,250,0.12)', text: '#60a5fa', border: 'rgba(96,165,250,0.3)', label: 'BEGINNER' }
+
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }}
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}
       className="rounded-2xl overflow-hidden"
       style={{ border: open ? '1px solid rgba(255,215,0,0.35)' : '1px solid rgba(255,215,0,0.1)', background: open ? 'rgba(255,215,0,0.02)' : 'rgba(255,255,255,0.02)' }}>
       <button onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between px-4 py-4 text-left min-h-[56px]">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-            style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.15)' }}>{cat.icon}</div>
+            style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.15)' }}>{icon}</div>
           <div>
-            <div className="font-body font-semibold text-white text-sm">{cat.name}</div>
-            <div className="text-white/30 font-body text-xs">{cat.items.length} supplier{cat.items.length !== 1 ? 's' : ''}</div>
+            <div className="flex items-center gap-2">
+              <span className="font-body font-semibold text-white text-sm">{category}</span>
+              {allLocked && (
+                <span className="text-[10px] font-body font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
+                  style={{ background: tierBadge.bg, color: tierBadge.text, border: `1px solid ${tierBadge.border}` }}>
+                  {tierBadge.label}
+                </span>
+              )}
+            </div>
+            <div className="text-white/30 font-body text-xs">{vendors.length} supplier{vendors.length !== 1 ? 's' : ''}</div>
           </div>
         </div>
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-white/30 text-xs pr-1">▼</motion.span>
@@ -247,9 +323,7 @@ function VendorCategoryCard({ cat, index }) {
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
             <div className="px-4 pb-4 pt-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {cat.items.map((item, i) => (
-                  <VendorItemCard key={i} item={item} categoryName={cat.name} categoryIcon={cat.icon} />
-                ))}
+                {vendors.map(v => <VendorCard key={v.id} vendor={v} userTier={userTier} showCategory={false} />)}
               </div>
             </div>
           </motion.div>
@@ -259,61 +333,27 @@ function VendorCategoryCard({ cat, index }) {
   )
 }
 
-function LockedCatCard({ cat, i, total }) {
-  const requiredTier = cat.tier || 'beginner'
-  const price        = PLAN_PRICES[requiredTier] || '$14.99/mo'
-  const planName     = requiredTier.charAt(0).toUpperCase() + requiredTier.slice(1)
-  const badgeStyle   = requiredTier === 'intermediate'
-    ? { bg: 'rgba(255,215,0,0.12)', text: '#FFD700', border: 'rgba(255,215,0,0.3)' }
-    : { bg: 'rgba(96,165,250,0.12)', text: '#60a5fa', border: 'rgba(96,165,250,0.3)' }
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (total + i) * 0.06 }}
-      className="rounded-2xl overflow-hidden"
-      style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)' }}>
-      <div className="px-4 py-3 flex items-center justify-between min-h-[56px]">
-        <div className="flex items-center gap-3 opacity-35 select-none">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-white/5">{cat.icon}</div>
-          <span className="font-body font-semibold text-white text-sm">{cat.name}</span>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-[10px] font-body font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
-            style={{ background: badgeStyle.bg, color: badgeStyle.text, border: `1px solid ${badgeStyle.border}` }}>
-            {planName}
-          </span>
-          <span className="text-sm">🔒</span>
-          <a href="/#plans" className="px-3 py-2 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center whitespace-nowrap"
-            style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', color: '#FFD700' }}>
-            Upgrade →
-          </a>
-        </div>
-      </div>
-      <div className="px-4 pb-3 space-y-1.5 pointer-events-none select-none" style={{ filter: 'blur(5px)' }}>
-        {['Supplier A — $8–$18 per unit', 'Supplier B — $12–$25 per unit', 'Supplier C — $5–$14 per unit'].map((s, si) => (
-          <div key={si} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-            <span className="text-white/50 font-body text-sm">{s}</span>
-            <span className="text-xs font-body px-2 py-1 rounded-full" style={{ background: 'rgba(255,215,0,0.1)', color: '#FFD700' }}>Visit →</span>
-          </div>
-        ))}
-      </div>
-    </motion.div>
-  )
-}
-
 function VendorsSection({ member }) {
   const [search, setSearch] = useState('')
+  const userTier = member.tier
 
-  const allItems = member.content.categories.flatMap(cat =>
-    cat.items.map(item => ({ ...item, catName: cat.name, catIcon: cat.icon }))
-  )
+  useEffect(() => {
+    console.log('Vendors loaded:', ALL_VENDORS.length)
+  }, [])
+
+  const freeVendors = ALL_VENDORS.filter(v => v.tier === 'free')
+  const paidVendors = ALL_VENDORS.filter(v => v.tier !== 'free')
 
   const q = search.trim().toLowerCase()
   const searchResults = q.length > 1
-    ? allItems.filter(item =>
-        item.name.toLowerCase().includes(q) ||
-        (item.catName || '').toLowerCase().includes(q)
+    ? paidVendors.filter(v =>
+        v.name.toLowerCase().includes(q) ||
+        v.category.toLowerCase().includes(q) ||
+        (v.subcategory || '').toLowerCase().includes(q)
       )
     : null
+
+  const categoriesInOrder = CAT_ORDER.filter(cat => paidVendors.some(v => v.category === cat))
 
   return (
     <div className="space-y-4">
@@ -349,9 +389,7 @@ function VendorsSection({ member }) {
             <>
               <p className="text-white/30 font-body text-xs">{searchResults.length} result{searchResults.length !== 1 ? 's' : ''}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {searchResults.map((item, i) => (
-                  <VendorItemCard key={i} item={item} categoryName={item.catName} categoryIcon={item.catIcon} showCategory />
-                ))}
+                {searchResults.map(v => <VendorCard key={v.id} vendor={v} userTier={userTier} showCategory />)}
               </div>
             </>
           )}
@@ -370,8 +408,8 @@ function VendorsSection({ member }) {
             </div>
             <p className="text-white/35 font-body text-xs mb-4">These are yours free. No payment needed.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {FREE_VENDOR_LINKS.map((v, i) => (
-                <div key={i} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+              {freeVendors.map(v => (
+                <div key={v.id} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
                   style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.12)' }}>
                   <div>
                     <div className="text-white/80 font-body text-sm font-semibold">{v.name}</div>
@@ -390,24 +428,18 @@ function VendorsSection({ member }) {
             </div>
           </motion.div>
 
-          {/* Unlocked categories */}
-          {member.content.categories.length > 0 && (
-            <div className="space-y-3">
-              {member.content.categories.map((cat, i) => <VendorCategoryCard key={cat.id} cat={cat} index={i} />)}
-            </div>
-          )}
-
-          {/* Locked categories */}
-          {member.content.lockedCategories?.length > 0 && (
-            <>
-              <p className="text-white/25 font-body text-xs uppercase tracking-widest pt-2">Upgrade to unlock</p>
-              <div className="space-y-3">
-                {member.content.lockedCategories.map((cat, i) => (
-                  <LockedCatCard key={cat.id || cat.name} cat={cat} i={i} total={member.content.categories.length} />
-                ))}
-              </div>
-            </>
-          )}
+          {/* All paid categories */}
+          <div className="space-y-3">
+            {categoriesInOrder.map((cat, i) => (
+              <CategoryAccordion
+                key={cat}
+                category={cat}
+                vendors={paidVendors.filter(v => v.category === cat)}
+                userTier={userTier}
+                index={i}
+              />
+            ))}
+          </div>
         </>
       )}
     </div>
