@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getSession } from '../utils/auth'
-import logoImg from '../Public/logo.png'
+import logoImg from '../Public/Logo.png'
 
 const VENDORS_URL = 'https://vendor-website-two.vercel.app/?canceled=true#vendors'
 
