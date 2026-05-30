@@ -12,7 +12,7 @@ app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true)
     const allowed = (process.env.CLIENT_URL || '').split(',').map(s => s.trim())
-    if (allowed.some(u => origin === u || origin.endsWith('.vercel.app'))) return cb(null, true)
+    if (allowed.some(u => origin === u || origin.endsWith('.vercel.app') || origin.endsWith('.fliplabs.shop'))) return cb(null, true)
     cb(new Error('Not allowed by CORS'))
   },
 }))
