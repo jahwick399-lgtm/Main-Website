@@ -32,24 +32,21 @@ const FREE_MEMBER = {
   content: {
     categories: [],
     lockedCategories: [
-      { id: 'electronics', name: 'Electronics', icon: '📱' },
-      { id: 'fragrance',   name: 'Fragrance',   icon: '🌹' },
-      { id: 'clothing',    name: 'Clothing',     icon: '👕' },
-      { id: 'hoodies',     name: 'Hoodies',      icon: '🧥' },
-      { id: 'shoes',       name: 'Shoes',        icon: '👟' },
-      { id: 'jewelry',     name: 'Jewelry',      icon: '💎' },
-      { id: 'watches',     name: 'Watches',      icon: '⌚' },
+      { id: 'electronics', name: 'Electronics', icon: '📱', tier: 'beginner' },
+      { id: 'fragrance',   name: 'Fragrance',   icon: '🌹', tier: 'beginner' },
+      { id: 'clothing',    name: 'Clothing',     icon: '👕', tier: 'beginner' },
+      { id: 'shoes',       name: 'Shoes',        icon: '👟', tier: 'intermediate' },
+      { id: 'jewelry',     name: 'Jewelry',      icon: '💎', tier: 'intermediate' },
+      { id: 'watches',     name: 'Watches',      icon: '⌚', tier: 'intermediate' },
     ],
     guides: [],
   },
 }
 
-const LOCKED_CATS = {
-  hoodies:  { name: 'Hoodies',  icon: '🧥' },
-  shoes:    { name: 'Shoes',    icon: '👟' },
-  jewelry:  { name: 'Jewelry',  icon: '💎' },
-  watches:  { name: 'Watches',  icon: '⌚' },
-}
+const FREE_VENDOR_LINKS = [
+  { name: 'Jewelry Vendor 1', url: 'https://jewelryresell.com',        category: 'Jewelry' },
+  { name: 'Jewelry Vendor 2', url: 'https://www.moissanitesupply.net', category: 'Jewelry' },
+]
 
 const DAILY_TIPS = [
   'Always check sold listings before you buy anything',
@@ -192,12 +189,48 @@ function Logo() {
 
 // ─── Vendor section ───────────────────────────────────────────────────────────
 
+function VendorItemCard({ item, categoryName, categoryIcon, showCategory = false }) {
+  const isSheet = !!item.isSheet
+  return (
+    <div className="rounded-2xl p-4 flex flex-col gap-3"
+      style={{
+        background: isSheet ? 'rgba(255,215,0,0.04)' : 'rgba(255,255,255,0.025)',
+        border: isSheet ? '1px solid rgba(255,215,0,0.28)' : '1px solid rgba(255,215,0,0.1)',
+        minHeight: 108,
+      }}>
+      {isSheet && <div className="text-xl leading-none">📋</div>}
+      <div className="flex-1 min-w-0">
+        <div className="font-body font-semibold text-white text-sm leading-snug">{item.name}</div>
+        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+          {item.price && (
+            <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
+              {item.price}
+            </span>
+          )}
+          {showCategory && categoryName && (
+            <span className="text-[10px] font-body px-1.5 py-0.5 rounded-full"
+              style={{ background: 'rgba(255,215,0,0.08)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              {categoryIcon} {categoryName}
+            </span>
+          )}
+        </div>
+      </div>
+      <a href={item.url} target="_blank" rel="noopener noreferrer"
+        className="w-full py-2.5 rounded-full text-xs font-body font-bold text-center flex items-center justify-center min-h-[36px]"
+        style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.25)', color: '#FFD700' }}>
+        {isSheet ? 'Open Spreadsheet ↗' : 'Access Vendor →'}
+      </a>
+    </div>
+  )
+}
+
 function VendorCategoryCard({ cat, index }) {
   const [open, setOpen] = useState(false)
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }}
       className="rounded-2xl overflow-hidden"
-      style={{ border: open ? '1px solid rgba(255,215,0,0.35)' : '1px solid rgba(255,215,0,0.1)', background: open ? 'rgba(255,215,0,0.03)' : 'rgba(255,255,255,0.02)' }}>
+      style={{ border: open ? '1px solid rgba(255,215,0,0.35)' : '1px solid rgba(255,215,0,0.1)', background: open ? 'rgba(255,215,0,0.02)' : 'rgba(255,255,255,0.02)' }}>
       <button onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between px-4 py-4 text-left min-h-[56px]">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
@@ -212,20 +245,12 @@ function VendorCategoryCard({ cat, index }) {
       <AnimatePresence initial={false}>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
-            <div className="px-4 pb-4 space-y-2 max-h-72 overflow-y-auto">
-              {cat.items.map((item, i) => (
-                <div key={i} className="flex items-center justify-between gap-3 py-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-white/70 font-body text-sm block truncate">{item.name}</span>
-                    {item.price && <span className="font-body text-xs" style={{ color: '#FFD700' }}>{item.price}</span>}
-                  </div>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer"
-                    className="flex-shrink-0 px-3 py-2 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center"
-                    style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.25)', color: '#FFD700' }}>
-                    Visit →
-                  </a>
-                </div>
-              ))}
+            <div className="px-4 pb-4 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {cat.items.map((item, i) => (
+                  <VendorItemCard key={i} item={item} categoryName={cat.name} categoryIcon={cat.icon} />
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
@@ -234,30 +259,35 @@ function VendorCategoryCard({ cat, index }) {
   )
 }
 
-function LockedCatCard({ cat, i, total, userTier = 'free' }) {
-  const nextTier  = TIER_NEXT[userTier] || 'beginner'
-  const price     = PLAN_PRICES[nextTier] || '$14.99/mo'
-  const planName  = nextTier.charAt(0).toUpperCase() + nextTier.slice(1)
+function LockedCatCard({ cat, i, total }) {
+  const requiredTier = cat.tier || 'beginner'
+  const price        = PLAN_PRICES[requiredTier] || '$14.99/mo'
+  const planName     = requiredTier.charAt(0).toUpperCase() + requiredTier.slice(1)
+  const badgeStyle   = requiredTier === 'intermediate'
+    ? { bg: 'rgba(255,215,0,0.12)', text: '#FFD700', border: 'rgba(255,215,0,0.3)' }
+    : { bg: 'rgba(96,165,250,0.12)', text: '#60a5fa', border: 'rgba(96,165,250,0.3)' }
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: (total + i) * 0.06 }}
       className="rounded-2xl overflow-hidden"
       style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)' }}>
-      {/* Header row */}
       <div className="px-4 py-3 flex items-center justify-between min-h-[56px]">
         <div className="flex items-center gap-3 opacity-35 select-none">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-white/5">{cat.icon}</div>
           <span className="font-body font-semibold text-white text-sm">{cat.name}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-[10px] font-body font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+            style={{ background: badgeStyle.bg, color: badgeStyle.text, border: `1px solid ${badgeStyle.border}` }}>
+            {planName}
+          </span>
           <span className="text-sm">🔒</span>
           <a href="/#plans" className="px-3 py-2 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center whitespace-nowrap"
             style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', color: '#FFD700' }}>
-            {planName} — {price}
+            Upgrade →
           </a>
         </div>
       </div>
-      {/* Blurred preview rows */}
       <div className="px-4 pb-3 space-y-1.5 pointer-events-none select-none" style={{ filter: 'blur(5px)' }}>
         {['Supplier A — $8–$18 per unit', 'Supplier B — $12–$25 per unit', 'Supplier C — $5–$14 per unit'].map((s, si) => (
           <div key={si} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
@@ -267,6 +297,120 @@ function LockedCatCard({ cat, i, total, userTier = 'free' }) {
         ))}
       </div>
     </motion.div>
+  )
+}
+
+function VendorsSection({ member }) {
+  const [search, setSearch] = useState('')
+
+  const allItems = member.content.categories.flatMap(cat =>
+    cat.items.map(item => ({ ...item, catName: cat.name, catIcon: cat.icon }))
+  )
+
+  const q = search.trim().toLowerCase()
+  const searchResults = q.length > 1
+    ? allItems.filter(item =>
+        item.name.toLowerCase().includes(q) ||
+        (item.catName || '').toLowerCase().includes(q)
+      )
+    : null
+
+  return (
+    <div className="space-y-4">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        <h2 className="font-display text-2xl sm:text-3xl text-white mb-1">My <span className="gold-text">Vendors</span></h2>
+        <p className="text-white/40 font-body text-sm">Tap any category to see suppliers. Use search to find by name.</p>
+      </motion.div>
+
+      {/* Search */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }} className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search vendors by name…"
+          className="w-full px-4 py-3 pr-10 rounded-xl font-body text-sm text-white placeholder-white/20 outline-none"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+        />
+        {search && (
+          <button onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 w-6 h-6 flex items-center justify-center text-xs">
+            ✕
+          </button>
+        )}
+      </motion.div>
+
+      {/* Search results */}
+      {searchResults !== null && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+          {searchResults.length === 0 ? (
+            <p className="text-white/30 font-body text-sm text-center py-6">No vendors match "{search}"</p>
+          ) : (
+            <>
+              <p className="text-white/30 font-body text-xs">{searchResults.length} result{searchResults.length !== 1 ? 's' : ''}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {searchResults.map((item, i) => (
+                  <VendorItemCard key={i} item={item} categoryName={item.catName} categoryIcon={item.catIcon} showCategory />
+                ))}
+              </div>
+            </>
+          )}
+        </motion.div>
+      )}
+
+      {/* Normal view */}
+      {searchResults === null && (
+        <>
+          {/* Free vendors */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+            className="rounded-2xl p-4" style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.2)' }}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>FREE</span>
+              <h3 className="font-display text-base text-white">Free Vendors — Start Here 💎</h3>
+            </div>
+            <p className="text-white/35 font-body text-xs mb-4">These are yours free. No payment needed.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {FREE_VENDOR_LINKS.map((v, i) => (
+                <div key={i} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                  style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.12)' }}>
+                  <div>
+                    <div className="text-white/80 font-body text-sm font-semibold">{v.name}</div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] font-body font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>FREE</span>
+                      <span className="text-white/30 font-body text-xs">{v.category}</span>
+                    </div>
+                  </div>
+                  <a href={v.url} target="_blank" rel="noopener noreferrer"
+                    className="flex-shrink-0 px-3 py-2 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center"
+                    style={{ background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.3)', color: '#34d399' }}>
+                    Access Vendor →
+                  </a>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Unlocked categories */}
+          {member.content.categories.length > 0 && (
+            <div className="space-y-3">
+              {member.content.categories.map((cat, i) => <VendorCategoryCard key={cat.id} cat={cat} index={i} />)}
+            </div>
+          )}
+
+          {/* Locked categories */}
+          {member.content.lockedCategories?.length > 0 && (
+            <>
+              <p className="text-white/25 font-body text-xs uppercase tracking-widest pt-2">Upgrade to unlock</p>
+              <div className="space-y-3">
+                {member.content.lockedCategories.map((cat, i) => (
+                  <LockedCatCard key={cat.id || cat.name} cat={cat} i={i} total={member.content.categories.length} />
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
+    </div>
   )
 }
 
@@ -2098,60 +2242,7 @@ export default function Dashboard() {
   const renderTab = () => {
     switch (tab) {
       case 'vendors':
-        return (
-          <div className="space-y-4">
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-              <h2 className="font-display text-2xl sm:text-3xl text-white mb-1">My <span className="gold-text">Vendors</span></h2>
-              <p className="text-white/40 font-body text-sm">Tap any category to see individual suppliers.</p>
-            </motion.div>
-
-            {/* Free vendors — always visible */}
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-              className="rounded-2xl p-4" style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.2)' }}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>FREE</span>
-                <h3 className="font-display text-base text-white">Free Vendors — Start Here 💎</h3>
-              </div>
-              <p className="text-white/35 font-body text-xs mb-4">These are yours free. No payment needed.</p>
-              <div className="space-y-3">
-                {[
-                  { name: 'Jewelry Vendor 1', category: 'Jewelry', url: 'https://jewelryresell.com' },
-                  { name: 'Jewelry Vendor 2', category: 'Jewelry', url: 'https://www.moissanitesupply.net' },
-                ].map((v, i) => (
-                  <div key={i} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                    style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.12)' }}>
-                    <div>
-                      <div className="text-white/80 font-body text-sm font-semibold">{v.name}</div>
-                      <div className="text-white/30 font-body text-xs">{v.category}</div>
-                    </div>
-                    <a href={v.url} target="_blank" rel="noopener noreferrer"
-                      className="flex-shrink-0 px-3 py-2 rounded-full text-xs font-body font-bold min-h-[36px] flex items-center"
-                      style={{ background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.3)', color: '#34d399' }}>
-                      Access Vendor →
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            {member.content.categories.length > 0 && (
-              <div className="space-y-3">
-                {member.content.categories.map((cat, i) => <VendorCategoryCard key={cat.id} cat={cat} index={i} />)}
-              </div>
-            )}
-            {member.content.lockedCategories?.length > 0 && (
-              <>
-                <p className="text-white/25 font-body text-xs uppercase tracking-widest pt-2">Upgrade to unlock</p>
-                <div className="space-y-3">
-                  {member.content.lockedCategories.map((cat, i) => {
-                    const c = typeof cat === 'string' ? LOCKED_CATS[cat] : cat
-                    return c ? <LockedCatCard key={c.name} cat={c} i={i} total={member.content.categories.length} userTier={member.tier} /> : null
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        )
+        return <VendorsSection member={member} />
 
       case 'learn':
         return (

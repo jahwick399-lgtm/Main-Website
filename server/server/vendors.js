@@ -1,6 +1,9 @@
 // All vendor data — served only after Stripe payment verification
 
 const electronics = [
+  // Resource sheets
+  { name: 'Full Electronics Catalog',  price: null, url: 'https://docs.google.com/spreadsheets/d/1a3R_v5FiirNsIWx6JJrVCaWPUOj1wFD2vhCLilk1hAg/htmlview', isSheet: true },
+  { name: 'Full Vendor Spreadsheet',   price: null, url: 'https://docs.google.com/spreadsheets/d/1bEDyU7BJ8sNstmoXJa_IPb4FR_9uTFl6-hepzlt0Ad4/edit?gid=595104429', isSheet: true },
   // Phones
   { name: 'iPhone', price: '$10', url: 'https://usfans.com/product/3/7722115604?ref=KRYFUS' },
   { name: 'iPhone', price: '$14', url: 'https://usfans.com/product/3/7719050755?ref=KRYFUS' },
@@ -92,10 +95,9 @@ const shoes = [
 ]
 
 const jewelry = [
-  { name: 'LV Slim Bracelet', price: null, url: 'https://usfans.com/product/3/7722032868?ref=KRYFUS' },
+  { name: 'LV Slim Bracelet',  price: null, url: 'https://usfans.com/product/3/7722032868?ref=KRYFUS' },
   { name: 'Van Cleef Bracelet', price: null, url: 'https://usfans.com/product/3/7719088065?ref=KRYFUS' },
   { name: 'Van Cleef Necklace', price: null, url: 'https://usfans.com/product/3/7719056589?ref=KRYFUS' },
-  { name: 'Jewelry Resell — Full Directory', price: null, url: 'https://jewelryresell.com' },
 ]
 
 const watches = [
@@ -174,9 +176,6 @@ const watches = [
   { name: 'IWC', price: '$78', url: 'https://usfans.com/product/3/7719004975?ref=KRYFUS' },
 ]
 
-const MASTER_LIST_1 = 'https://docs.google.com/spreadsheets/d/1a3R_v5FiirNsIWx6JJrVCaWPUOj1wFD2vhCLilk1hAg/htmlview'
-const MASTER_LIST_2 = 'https://docs.google.com/spreadsheets/d/1bEDyU7BJ8sNstmoXJa_IPb4FR_9uTFl6-hepzlt0Ad4/edit?gid=595104429#gid=595104429'
-
 module.exports = {
   electronics,
   fragrance,
@@ -185,7 +184,4 @@ module.exports = {
   shoes,
   jewelry,
   watches,
-  FULL_MASTER_LIST: MASTER_LIST_1,
-  MASTER_LIST_1,
-  MASTER_LIST_2,
 }

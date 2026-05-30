@@ -33,43 +33,29 @@ const PLAN_DISPLAY = {
 // ─── Member content (NEVER exposed to public pages) ──────────────────────────
 
 function getMemberContent(tier) {
-  const ALL_CATEGORIES = (includeMasterList = false) => {
-    const cats = [
-      { id: 'electronics', name: 'Electronics', icon: '📱', items: VENDORS.electronics },
-      { id: 'fragrance',   name: 'Fragrance',   icon: '🌹', items: VENDORS.fragrance },
-      { id: 'clothing',    name: 'Clothing',     icon: '👕', items: VENDORS.clothing },
-      { id: 'hoodies',     name: 'Hoodies',      icon: '🧥', items: VENDORS.hoodies },
-      { id: 'shoes',       name: 'Shoes',        icon: '👟', items: VENDORS.shoes },
-      { id: 'jewelry',     name: 'Jewelry',      icon: '💎', items: VENDORS.jewelry },
-      { id: 'watches',     name: 'Watches',      icon: '⌚', items: VENDORS.watches },
-    ]
-    if (includeMasterList) {
-      cats.push({
-        id: 'master',
-        name: 'Full Master List',
-        icon: '📋',
-        items: [
-          { name: 'Master Spreadsheet — All Categories (Vol. 1)', price: null, url: VENDORS.MASTER_LIST_1 },
-          { name: 'Master Spreadsheet — All Categories (Vol. 2)', price: null, url: VENDORS.MASTER_LIST_2 },
-        ],
-      })
-    }
-    return cats
-  }
+  // Electronics (Beginner+), Fragrance (Beginner+), Clothing/Hoodies (Beginner+)
+  // Shoes, Jewelry, Watches — Intermediate+ only
+  const BEGINNER_CATS = [
+    { id: 'electronics', name: 'Electronics', icon: '📱', items: VENDORS.electronics },
+    { id: 'fragrance',   name: 'Fragrance',   icon: '🌹', items: VENDORS.fragrance },
+    { id: 'clothing',    name: 'Clothing',     icon: '👕', items: VENDORS.clothing },
+  ]
+  const ALL_CATS = [
+    ...BEGINNER_CATS,
+    { id: 'shoes',   name: 'Shoes',   icon: '👟', items: VENDORS.shoes },
+    { id: 'jewelry', name: 'Jewelry', icon: '💎', items: VENDORS.jewelry },
+    { id: 'watches', name: 'Watches', icon: '⌚', items: VENDORS.watches },
+  ]
+  const INTERMEDIATE_LOCKED = [
+    { id: 'shoes',   name: 'Shoes',   icon: '👟', tier: 'intermediate' },
+    { id: 'jewelry', name: 'Jewelry', icon: '💎', tier: 'intermediate' },
+    { id: 'watches', name: 'Watches', icon: '⌚', tier: 'intermediate' },
+  ]
 
   const content = {
     beginner: {
-      categories: [
-        { id: 'electronics', name: 'Electronics', icon: '📱', items: VENDORS.electronics },
-        { id: 'fragrance',   name: 'Fragrance',   icon: '🌹', items: VENDORS.fragrance },
-        { id: 'clothing',    name: 'Clothing',     icon: '👕', items: VENDORS.clothing },
-      ],
-      lockedCategories: [
-        { id: 'hoodies',  name: 'Hoodies',  icon: '🧥' },
-        { id: 'shoes',    name: 'Shoes',    icon: '👟' },
-        { id: 'jewelry',  name: 'Jewelry',  icon: '💎' },
-        { id: 'watches',  name: 'Watches',  icon: '⌚' },
-      ],
+      categories: BEGINNER_CATS,
+      lockedCategories: INTERMEDIATE_LOCKED,
       guides: [
         { title: 'Your Vendor Directory',      desc: 'Electronics, Fragrance, and Clothing suppliers — all verified and ready to source from.' },
         { title: 'Step-by-Step Flip Guides',   desc: 'Exactly how to source, list, and flip products for consistent profit.' },
@@ -78,21 +64,21 @@ function getMemberContent(tier) {
       ],
     },
     intermediate: {
-      categories: ALL_CATEGORIES(false),
+      categories: ALL_CATS,
       lockedCategories: [],
       guides: [
-        { title: 'All 7 Vendor Categories',       desc: 'Full access to every category in the Flip Labs directory.' },
-        { title: 'Automation & Scaling SOPs',      desc: 'Standard operating procedures to automate tasks and scale your operation.' },
-        { title: 'Platform Fee Calculators',       desc: 'Calculate exact net profit after eBay, StockX, Amazon, and GOAT fees.' },
-        { title: 'Monthly Sourcing Calls',         desc: 'Live group calls every month with the Flip Labs team. Replays included.' },
-        { title: 'Private Deal Alerts',            desc: 'Exclusive alerts on high-margin products and restocks before they go public.' },
+        { title: 'All 6 Vendor Categories',        desc: 'Full access to every category in the Flip Labs directory.' },
+        { title: 'Automation & Scaling SOPs',       desc: 'Standard operating procedures to automate tasks and scale your operation.' },
+        { title: 'Platform Fee Calculators',        desc: 'Calculate exact net profit after eBay, StockX, Amazon, and GOAT fees.' },
+        { title: 'Monthly Sourcing Calls',          desc: 'Live group calls every month with the Flip Labs team. Replays included.' },
+        { title: 'Private Deal Alerts',             desc: 'Exclusive alerts on high-margin products and restocks before they go public.' },
       ],
     },
     pro: {
-      categories: ALL_CATEGORIES(true),
+      categories: ALL_CATS,
       lockedCategories: [],
       guides: [
-        { title: 'Full Pro Vendor Directory',       desc: 'Every vendor plus the complete master spreadsheet with all categories.' },
+        { title: 'Full Pro Vendor Directory',       desc: 'Every vendor category including exclusive Shoes, Jewelry, and Watches.' },
         { title: '1-on-1 Onboarding Call',          desc: 'Personal call to set up your operation and answer every question you have.' },
         { title: 'Exclusive Brand Accounts',        desc: 'Brand-authorized accounts with priority access and restocking.' },
         { title: 'Direct Supplier Introductions',   desc: 'Personal warm introductions to our top wholesale contacts.' },
