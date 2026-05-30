@@ -399,6 +399,52 @@ function VendorsSection({ member }) {
       {/* Normal view */}
       {searchResults === null && (
         <>
+          {/* All Vendors spreadsheets — Intermediate/Pro/Admin only */}
+          {(userTier === 'intermediate' || userTier === 'pro' || userTier === 'admin') && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+              <div className="mb-3">
+                <h3 className="font-display text-lg text-white">
+                  📋 All <span className="gold-text" style={{ borderBottom: '2px solid #FFD700', paddingBottom: 1 }}>Vendors</span>
+                </h3>
+                <p className="text-white/35 font-body text-xs mt-1">Full supplier catalog — everything in one place</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  {
+                    icon: '📊',
+                    title: 'Master Vendor Spreadsheet',
+                    desc: 'Full catalog of every vendor across all categories',
+                    url: 'https://docs.google.com/spreadsheets/d/1a3R_v5FiirNsIWx6JJrVCaWPUOj1wFD2vhCLilk1hAg/htmlview?utm_source=ig&utm_medium=social&utm_content=link_in_bio',
+                  },
+                  {
+                    icon: '📋',
+                    title: 'Extended Vendor List',
+                    desc: 'Additional vendors and supplier links updated regularly',
+                    url: 'https://docs.google.com/spreadsheets/d/1bEDyU7BJ8sNstmoXJa_IPb4FR_9uTFl6-hepzlt0Ad4/edit?gid=595104429#gid=595104429',
+                  },
+                ].map((card, i) => (
+                  <div key={i} className="rounded-2xl p-5 flex flex-col gap-3"
+                    style={{
+                      background: 'rgba(255,215,0,0.03)',
+                      border: '1px solid rgba(255,215,0,0.25)',
+                      boxShadow: '0 0 18px rgba(255,215,0,0.06)',
+                    }}>
+                    <div className="text-2xl leading-none">{card.icon}</div>
+                    <div className="flex-1">
+                      <div className="font-body font-semibold text-white text-sm leading-snug mb-1">{card.title}</div>
+                      <div className="text-white/40 font-body text-xs">{card.desc}</div>
+                    </div>
+                    <a href={card.url} target="_blank" rel="noopener noreferrer"
+                      className="w-full py-2.5 rounded-full text-xs font-body font-bold text-center flex items-center justify-center gap-1.5 min-h-[36px]"
+                      style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', color: '#FFD700' }}>
+                      Open Spreadsheet ↗
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {/* Free vendors */}
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
             className="rounded-2xl p-4" style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.2)' }}>
