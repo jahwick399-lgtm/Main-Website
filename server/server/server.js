@@ -8,7 +8,14 @@ const app = express()
 
 app.use('/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json())
-app.use(cors({ origin: process.env.CLIENT_URL }))
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true)
+    const allowed = (process.env.CLIENT_URL || '').split(',').map(s => s.trim())
+    if (allowed.some(u => origin === u || origin.endsWith('.vercel.app'))) return cb(null, true)
+    cb(new Error('Not allowed by CORS'))
+  },
+}))
 
 // ─── Plan config ─────────────────────────────────────────────────────────────
 
