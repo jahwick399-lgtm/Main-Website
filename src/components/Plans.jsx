@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getSession } from '../utils/auth'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -87,9 +88,10 @@ function PlanCard({ plan, i }) {
   const handleCheckout = async () => {
     setLoading(true); setErr('')
     try {
+      const session = getSession()
       const res  = await fetch(`${API}/create-checkout-session`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: plan.planKey }),
+        body: JSON.stringify({ plan: plan.planKey, email: session?.email || '' }),
       })
       const data = await res.json()
       if (data.url) window.location.href = data.url

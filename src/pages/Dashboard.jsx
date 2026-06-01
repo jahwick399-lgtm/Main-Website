@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { COURSE_MODULES, canAccess } from '../data/courseContent'
+import { SUPPLIER_MODULES } from '../data/supplierContent'
 import { ALL_VENDORS } from '../data/vendorData'
 import { MILESTONES } from '../data/milestones'
 import { getSession, clearSession, getUsers, updateUserTier } from '../utils/auth'
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'home',       label: 'Home',      icon: '🏠' },
   { id: 'vendors',    label: 'Vendors',   icon: '🏪' },
   { id: 'learn',      label: 'Learn',     icon: '📚' },
+  { id: 'supplier',   label: 'Supplier',  icon: '🏭' },
   { id: 'tools',      label: 'Tools',     icon: '🛠️' },
   { id: 'milestones', label: 'Progress',  icon: '🏆' },
   { id: 'account',    label: 'Account',   icon: '👤' },
@@ -673,6 +675,250 @@ function ModuleCard({ mod, userTier, completed, onSelectLesson }) {
         )}
       </AnimatePresence>
     </motion.div>
+  )
+}
+
+// ─── Supplier section ─────────────────────────────────────────────────────────
+
+const SUPPLIER_TOOLS = [
+  {
+    id: 'profit-calc',
+    title: 'Supplier Profit Calculator',
+    icon: '🧮',
+    component: function SupplierCalc() {
+      const [cost,  setCost]  = useState('')
+      const [units, setUnits] = useState('')
+      const [sell,  setSell]  = useState('')
+      const inv   = parseFloat(cost)  * parseFloat(units)  || 0
+      const rev   = parseFloat(sell)  * parseFloat(units)  || 0
+      const profit = rev - inv
+      const roi    = inv > 0 ? ((profit / inv) * 100).toFixed(0) : 0
+      const breakEven = parseFloat(sell) > 0 ? Math.ceil(inv / parseFloat(sell)) : 0
+      return (
+        <div className="space-y-3">
+          {[
+            { label: 'Cost per unit ($)', val: cost,  set: setCost },
+            { label: 'Units ordered',    val: units, set: setUnits },
+            { label: 'Sell price per access ($)', val: sell, set: setSell },
+          ].map(f => (
+            <div key={f.label}>
+              <label className="text-white/40 font-body text-xs uppercase tracking-widest block mb-1">{f.label}</label>
+              <input type="number" value={f.val} onChange={e => f.set(e.target.value)} placeholder="0"
+                className="w-full px-3 py-2 rounded-xl font-body text-sm text-white outline-none"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }} />
+            </div>
+          ))}
+          {inv > 0 && (
+            <div className="rounded-xl p-4 mt-2 space-y-1.5" style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.15)' }}>
+              {[
+                ['Total investment', `$${inv.toFixed(2)}`],
+                ['Total revenue',    `$${rev.toFixed(2)}`],
+                ['Profit',           `$${profit.toFixed(2)}`],
+                ['ROI',              `${roi}%`],
+                ['Break-even at',    `${breakEven} customers`],
+              ].map(([l, v]) => (
+                <div key={l} className="flex justify-between">
+                  <span className="text-white/40 font-body text-xs">{l}</span>
+                  <span className="font-body text-xs font-bold" style={{ color: '#FFD700' }}>{v}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    },
+  },
+]
+
+const SUPPLIER_RESOURCES = [
+  { name: '1688.com',       desc: 'Chinese wholesale',          url: 'https://1688.com' },
+  { name: 'DHgate.com',     desc: 'Low MOQ wholesale',          url: 'https://www.dhgate.com' },
+  { name: 'Alibaba.com',    desc: 'Global suppliers',           url: 'https://www.alibaba.com' },
+  { name: 'Gumroad.com',    desc: 'Sell digital products',      url: 'https://gumroad.com' },
+  { name: 'Payhip.com',     desc: 'Sell digital products',      url: 'https://payhip.com' },
+  { name: 'Canva.com',      desc: 'Design your brand',          url: 'https://www.canva.com' },
+  { name: 'Beacons.ai',     desc: 'Link in bio storefront',     url: 'https://beacons.ai' },
+]
+
+const LAUNCH_CHECKLIST_ITEMS = [
+  'Found and tested at least 5 vendor links',
+  'Organized links into a clean Google Sheet',
+  'Set up payment method (Stripe, Gumroad, Payhip)',
+  'Built a simple sales page or link in bio',
+  'Got at least 1 person to review the product',
+  'Posted about it on at least 1 social platform',
+  'Set up automatic delivery after payment',
+  'Created a way for buyers to contact you',
+]
+
+const PRICE_GUIDE = [
+  { label: 'Single category link',       range: '$5 – $15' },
+  { label: 'Category bundle (3-5 links)', range: '$15 – $30' },
+  { label: 'Full access monthly',         range: '$20 – $50' },
+  { label: 'One-time all access',         range: '$50 – $100' },
+]
+
+function SupplierSection({ userTier }) {
+  const isPaid = userTier && userTier !== 'free'
+  const [activeLesson, setActiveLesson] = useState(null)
+  const [activeMod,    setActiveMod]    = useState(null)
+  const [completed,    setCompleted]    = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('fl_supplier_done') || '[]')) } catch { return new Set() }
+  })
+  const [launchChecks, setLaunchChecks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('fl_launch_checks') || '[]') } catch { return [] }
+  })
+
+  const toggleCheck = (i) => {
+    const next = launchChecks.includes(i) ? launchChecks.filter(x => x !== i) : [...launchChecks, i]
+    setLaunchChecks(next)
+    localStorage.setItem('fl_launch_checks', JSON.stringify(next))
+  }
+
+  const openLesson = (lesson, mod) => { setActiveLesson(lesson); setActiveMod(mod) }
+  const closeLesson = () => { setActiveLesson(null); setActiveMod(null) }
+  const completeLesson = (id) => {
+    const next = new Set(completed).add(id)
+    setCompleted(next)
+    localStorage.setItem('fl_supplier_done', JSON.stringify([...next]))
+  }
+
+  if (!isPaid) {
+    return (
+      <div className="space-y-4">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <h2 className="font-display text-2xl sm:text-3xl text-white mb-1">🏭 <span className="gold-text">Supplier Program</span></h2>
+          <p className="text-white/40 font-body text-sm">Learn how to become a vendor yourself.</p>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="rounded-2xl overflow-hidden relative" style={{ minHeight: 280, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          {/* Blurred preview */}
+          <div className="p-5 space-y-2" style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>
+            {['The Supplier Mindset', 'Finding Your Suppliers', 'Building Your Operation', 'Scaling Your Business'].map(t => (
+              <div key={t} className="rounded-xl px-4 py-3" style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.1)' }}>
+                <div className="text-white font-body text-sm font-semibold">{t}</div>
+                <div className="text-white/30 font-body text-xs mt-0.5">4 lessons</div>
+              </div>
+            ))}
+          </div>
+          {/* Lock overlay */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center">
+            <span className="text-3xl">🔒</span>
+            <div>
+              <p className="text-white font-body font-semibold text-base">This is for paid members only</p>
+              <p className="text-white/45 font-body text-sm mt-1">Upgrade to Beginner or higher to access the full Supplier Program</p>
+            </div>
+            <a href="/#plans" className="btn-gold px-6 py-2.5 rounded-full font-body font-bold text-dark text-sm" style={{ minHeight: 44 }}>
+              Upgrade Now →
+            </a>
+          </div>
+        </motion.div>
+      </div>
+    )
+  }
+
+  const totalLessons = SUPPLIER_MODULES.reduce((a, m) => a + m.lessons.length, 0)
+
+  return (
+    <div className="space-y-4">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        <h2 className="font-display text-2xl sm:text-3xl text-white mb-1">🏭 <span className="gold-text">Supplier Program</span></h2>
+        <p className="text-white/40 font-body text-sm">{completed.size} of {totalLessons} lessons completed.</p>
+      </motion.div>
+
+      {/* Modules */}
+      <div className="space-y-3">
+        {SUPPLIER_MODULES.map((mod, i) => (
+          <motion.div key={mod.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+            <ModuleCard mod={mod} userTier={userTier} completed={completed} onSelectLesson={(l) => openLesson(l, mod)} />
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Tools */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <h3 className="font-display text-xl text-white mb-3">🛠️ Supplier <span className="gold-text">Tools</span></h3>
+        <div className="space-y-3">
+          {/* Profit Calculator */}
+          <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,215,0,0.1)' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">🧮</span>
+              <span className="font-body font-semibold text-white text-sm">Supplier Profit Calculator</span>
+            </div>
+            {(() => { const Calc = SUPPLIER_TOOLS[0].component; return Calc ? <Calc /> : null })()}
+          </div>
+
+          {/* Price guide */}
+          <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,215,0,0.1)' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">💰</span>
+              <span className="font-body font-semibold text-white text-sm">Pricing Strategy Guide</span>
+            </div>
+            <div className="space-y-2">
+              {PRICE_GUIDE.map(row => (
+                <div key={row.label} className="flex items-center justify-between py-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                  <span className="text-white/55 font-body text-xs">{row.label}</span>
+                  <span className="font-body text-xs font-bold" style={{ color: '#FFD700' }}>{row.range}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Launch Checklist */}
+          <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,215,0,0.1)' }}>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">✅</span>
+              <span className="font-body font-semibold text-white text-sm">Launch Checklist</span>
+            </div>
+            <div className="space-y-2.5">
+              {LAUNCH_CHECKLIST_ITEMS.map((item, i) => (
+                <button key={i} onClick={() => toggleCheck(i)} className="w-full flex items-start gap-3 text-left">
+                  <span className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
+                    style={{ background: launchChecks.includes(i) ? 'rgba(255,215,0,0.2)' : 'rgba(255,255,255,0.04)', border: `1px solid ${launchChecks.includes(i) ? 'rgba(255,215,0,0.5)' : 'rgba(255,255,255,0.15)'}` }}>
+                    {launchChecks.includes(i) && <span style={{ color: '#FFD700', fontSize: 10 }}>✓</span>}
+                  </span>
+                  <span className="font-body text-xs leading-relaxed" style={{ color: launchChecks.includes(i) ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.65)', textDecoration: launchChecks.includes(i) ? 'line-through' : 'none' }}>{item}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Resource Links */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+        <h3 className="font-display text-xl text-white mb-3">🔗 Free <span className="gold-text">Resources</span></h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {SUPPLIER_RESOURCES.map(r => (
+            <a key={r.name} href={r.url} target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-between px-4 py-3 rounded-xl transition-all"
+              style={{ background: 'rgba(255,215,0,0.04)', border: '1px solid rgba(255,215,0,0.12)' }}>
+              <div>
+                <div className="font-body font-semibold text-white text-sm">{r.name}</div>
+                <div className="text-white/35 font-body text-xs">{r.desc}</div>
+              </div>
+              <span style={{ color: '#FFD700', fontSize: 14 }}>↗</span>
+            </a>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Lesson modal */}
+      <AnimatePresence>
+        {activeLesson && activeMod && (
+          <LessonModal
+            lesson={activeLesson}
+            module={activeMod}
+            allLessons={activeMod.lessons}
+            lessonIndex={activeMod.lessons.indexOf(activeLesson)}
+            onClose={closeLesson}
+            onComplete={completeLesson}
+            isCompleted={completed.has(activeLesson.id)}
+            onNextLesson={(next) => { setActiveLesson(next) }}
+          />
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
 
@@ -2342,6 +2588,9 @@ export default function Dashboard() {
             <ResellGlossary />
           </div>
         )
+
+      case 'supplier':
+        return <SupplierSection userTier={member.tier} />
 
       case 'tools':
         return <ToolsSection userTier={member.tier} />

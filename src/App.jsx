@@ -16,6 +16,7 @@ import FinalFomo from './components/FinalFomo'
 import Reviews from './components/Reviews'
 import TrustBadges from './components/TrustBadges'
 import FAQ from './components/FAQ'
+import TheNextLevel from './components/TheNextLevel'
 import Footer from './components/Footer'
 import PurchaseToast from './components/PurchaseToast'
 import ScrollProgress from './components/ScrollProgress'
@@ -54,6 +55,7 @@ function LandingPage() {
         <Reviews />
         <TrustBadges />
         <FAQ />
+        <TheNextLevel />
       </main>
       <Footer />
       <PurchaseToast />

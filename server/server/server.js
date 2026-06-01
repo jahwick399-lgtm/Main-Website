@@ -103,18 +103,21 @@ function getMemberContent(tier) {
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 app.post('/create-checkout-session', async (req, res) => {
-  const { plan } = req.body
+  const { plan, email } = req.body
   const priceId  = PRICE_IDS()[plan]
   if (!priceId) return res.status(400).json({ error: 'Invalid plan' })
 
   try {
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams = {
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${process.env.CLIENT_URL}/#plans`,
-    })
+      metadata: { plan },
+    }
+    if (email) sessionParams.customer_email = email
+    const session = await stripe.checkout.sessions.create(sessionParams)
     res.json({ url: session.url })
   } catch (err) {
     console.error('create-checkout-session:', err.message)
@@ -194,6 +197,28 @@ app.post('/create-portal-session', async (req, res) => {
     res.json({ url: portalSession.url })
   } catch (err) {
     console.error('create-portal-session:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.get('/restore-access', async (req, res) => {
+  const { email } = req.query
+  if (!email) return res.status(400).json({ error: 'Missing email' })
+  try {
+    const customers = await stripe.customers.list({ email, limit: 1 })
+    if (!customers.data.length) return res.json({ found: false })
+    const customerId = customers.data[0].id
+    const subs = await stripe.subscriptions.list({
+      customer: customerId, status: 'active', limit: 1,
+      expand: ['data.items.data.price'],
+    })
+    if (!subs.data.length) return res.json({ found: false })
+    const priceId = subs.data[0].items.data[0].price.id
+    const tier    = PLAN_NAMES()[priceId]
+    if (!tier) return res.json({ found: false })
+    res.json({ found: true, tier, planDisplay: PLAN_DISPLAY[tier], email })
+  } catch (err) {
+    console.error('restore-access:', err.message)
     res.status(500).json({ error: err.message })
   }
 })

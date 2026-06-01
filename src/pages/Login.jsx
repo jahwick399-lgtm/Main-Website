@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import GoldParticles from '../components/GoldParticles'
-import { login, getSession } from '../utils/auth'
+import { login, getSession, restoreAccessFromStripe } from '../utils/auth'
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 function EyeIcon({ open }) {
   return open ? (
@@ -24,6 +26,29 @@ export default function Login() {
   const [showPw,   setShowPw]   = useState(false)
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
+
+  const [restoreOpen,   setRestoreOpen]   = useState(false)
+  const [restoreEmail,  setRestoreEmail]  = useState('')
+  const [restoreErr,    setRestoreErr]    = useState('')
+  const [restoreLoad,   setRestoreLoad]   = useState(false)
+  const [restoreOk,     setRestoreOk]     = useState('')
+
+  const handleRestore = async (e) => {
+    e.preventDefault()
+    if (!restoreEmail) return setRestoreErr('Enter your email.')
+    setRestoreLoad(true); setRestoreErr('')
+    try {
+      const res  = await fetch(`${API}/restore-access?email=${encodeURIComponent(restoreEmail)}`)
+      const data = await res.json()
+      if (!data.found) { setRestoreErr('No active subscription found for that email.'); setRestoreLoad(false); return }
+      restoreAccessFromStripe(data.email, data.tier)
+      setRestoreOk(`Access restored — ${data.planDisplay}. Redirecting…`)
+      setTimeout(() => navigate('/dashboard'), 2000)
+    } catch {
+      setRestoreErr('Could not connect. Try again.')
+      setRestoreLoad(false)
+    }
+  }
 
   useEffect(() => {
     const session = getSession()
@@ -126,6 +151,55 @@ export default function Login() {
             </p>
           </div>
         </div>
+
+        {/* Restore My Access */}
+        <div className="mt-4">
+          <button
+            onClick={() => setRestoreOpen(v => !v)}
+            className="w-full text-center text-white/30 font-body text-xs hover:text-white/60 transition-colors py-2"
+          >
+            {restoreOpen ? '▲ Hide' : '🔑 Already paid? Restore my access'}
+          </button>
+
+          <AnimatePresence initial={false}>
+            {restoreOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="glass-card rounded-2xl p-5 mt-2" style={{ border: '1px solid rgba(255,215,0,0.15)' }}>
+                  <p className="text-white/40 font-body text-xs mb-3 text-center">
+                    Enter the email you used to pay — we'll restore your access instantly.
+                  </p>
+                  <form onSubmit={handleRestore} className="space-y-3">
+                    <input
+                      type="email"
+                      value={restoreEmail}
+                      onChange={e => setRestoreEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      className="w-full px-4 py-3 rounded-xl font-body text-sm text-white placeholder-white/20 outline-none"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
+                    />
+                    {restoreErr && <p className="text-red-400 font-body text-xs">{restoreErr}</p>}
+                    {restoreOk  && <p className="font-body text-xs" style={{ color: '#FFD700' }}>{restoreOk}</p>}
+                    <button
+                      type="submit"
+                      disabled={restoreLoad}
+                      className={`w-full btn-gold rounded-full font-body font-bold text-dark text-sm ${restoreLoad ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      style={{ padding: '12px 24px', minHeight: 48 }}
+                    >
+                      {restoreLoad ? 'Checking…' : 'Restore Access →'}
+                    </button>
+                  </form>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
       </motion.div>
     </div>
   )

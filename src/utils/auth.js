@@ -49,3 +49,36 @@ export function updateUserTier(email, tier) {
   users[key].tier = tier
   localStorage.setItem('fl_users', JSON.stringify(users))
 }
+
+// Called from Success page after Stripe payment confirmed.
+// Creates user if they don't exist, updates tier if they do.
+// Returns true if this is a brand new account (no password yet).
+export function updateOrCreateUserFromStripe(email, tier) {
+  const key   = email.toLowerCase()
+  const users = getUsers()
+  const isNew = !users[key]
+  if (isNew) {
+    users[key] = { email: key, password: null, tier, createdAt: new Date().toISOString(), fromStripe: true }
+  } else {
+    users[key].tier = tier
+  }
+  localStorage.setItem('fl_users', JSON.stringify(users))
+  setSession(key, tier)
+  return isNew
+}
+
+// Set a password for an account created via Stripe (no prior password).
+export function setPasswordForUser(email, password) {
+  const users = getUsers()
+  const key   = email.toLowerCase()
+  if (!users[key]) return { error: 'Account not found.' }
+  users[key].password    = password
+  users[key].fromStripe  = false
+  localStorage.setItem('fl_users', JSON.stringify(users))
+  return { success: true }
+}
+
+// Restore access from Stripe data (already verified by caller).
+export function restoreAccessFromStripe(email, tier) {
+  updateOrCreateUserFromStripe(email, tier)
+}
