@@ -96,18 +96,11 @@ export default function Reviews() {
         transition={{ duration: 0.7 }}
         className="text-center px-5 mb-10 sm:mb-12"
       >
-        <span
-          className="inline-block px-4 py-1.5 rounded-full text-xs font-body font-semibold tracking-widest uppercase mb-4"
-          style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', color: '#FFD700' }}
-        >
-          Member Reviews
-        </span>
-        <h2 className="font-display text-4xl sm:text-5xl md:text-6xl mb-3">
-          <span className="text-white">Real People,</span>{' '}
-          <span className="gold-text">Real Results</span>
+        <h2 className="font-display text-white mb-3" style={{ fontSize: 'clamp(1.75rem, 6vw, 3.5rem)' }}>
+          DON'T TAKE OUR WORD FOR IT
         </h2>
         <p className="text-white/45 font-body text-sm sm:text-base max-w-sm mx-auto">
-          Over 2,400 members. Here's what they're saying.
+          Real people. Real results.
         </p>
       </motion.div>
 

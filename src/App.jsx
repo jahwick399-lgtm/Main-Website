@@ -4,12 +4,15 @@ import CursorDot from './components/CursorDot'
 import GoldParticles from './components/GoldParticles'
 import MeshBackground from './components/MeshBackground'
 import Navbar from './components/Navbar'
+import TickerBar from './components/TickerBar'
 import Hero from './components/Hero'
+import FomoSection from './components/FomoSection'
 import Plans from './components/Plans'
+import WhatYouGet from './components/WhatYouGet'
 import HowItWorks from './components/HowItWorks'
 import ByTheNumbers from './components/ByTheNumbers'
-import WhatYouGet from './components/WhatYouGet'
 import WhoItsFor from './components/WhoItsFor'
+import FinalFomo from './components/FinalFomo'
 import Reviews from './components/Reviews'
 import TrustBadges from './components/TrustBadges'
 import FAQ from './components/FAQ'
@@ -17,6 +20,7 @@ import Footer from './components/Footer'
 import PurchaseToast from './components/PurchaseToast'
 import ScrollProgress from './components/ScrollProgress'
 import BackToTop from './components/BackToTop'
+import StickyBar from './components/StickyBar'
 import Success from './pages/Success'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
@@ -36,14 +40,17 @@ function LandingPage() {
       <ScrollProgress />
       <MeshBackground />
       <GoldParticles />
+      <TickerBar />
       <Navbar />
       <main className="relative z-10">
         <Hero />
+        <FomoSection />
         <Plans />
+        <WhatYouGet />
         <HowItWorks />
         <ByTheNumbers />
-        <WhatYouGet />
         <WhoItsFor />
+        <FinalFomo />
         <Reviews />
         <TrustBadges />
         <FAQ />
@@ -51,6 +58,7 @@ function LandingPage() {
       <Footer />
       <PurchaseToast />
       <BackToTop />
+      <StickyBar />
     </div>
   )
 }

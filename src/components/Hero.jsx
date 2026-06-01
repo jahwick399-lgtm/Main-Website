@@ -1,162 +1,139 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
 
 const VENDORS_URL = 'https://vendor-website-two.vercel.app/?canceled=true#vendors'
 
-const HEADLINE = 'Turn Products Into Profit'
+const AVATAR_DATA = [
+  { i: 'M', c: 'linear-gradient(135deg,#FFD700,#B8860B)' },
+  { i: 'J', c: 'linear-gradient(135deg,#c084fc,#7c3aed)' },
+  { i: 'T', c: 'linear-gradient(135deg,#FFD700,#FFA500)' },
+  { i: 'D', c: 'linear-gradient(135deg,#34d399,#059669)' },
+  { i: 'K', c: 'linear-gradient(135deg,#f472b6,#db2777)' },
+  { i: 'A', c: 'linear-gradient(135deg,#FFD700,#B8860B)' },
+  { i: 'R', c: 'linear-gradient(135deg,#60a5fa,#2563eb)' },
+  { i: 'C', c: 'linear-gradient(135deg,#c084fc,#9333ea)' },
+]
 
-const goldStyle = {
-  backgroundImage: 'linear-gradient(135deg,#FFE566,#FFD700,#FFA500)',
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-  backgroundClip: 'text',
-}
-
-function LetterReveal({ text, style, baseDelay, globalOffset }) {
-  return (
-    <>
-      {[...text].map((char, i) => (
-        <motion.span
-          key={i}
-          initial={{ opacity: 0, y: 18, filter: 'brightness(0)' }}
-          animate={{
-            opacity: [0, 1, 1],
-            y: [18, 0, 0],
-            filter: ['brightness(0)', 'brightness(4.5)', 'brightness(1)'],
-          }}
-          transition={{
-            duration: 0.55,
-            delay: baseDelay + (globalOffset + i) * 0.045,
-            times: [0, 0.28, 1],
-            ease: [0.16, 1, 0.3, 1],
-          }}
-          className="inline-block"
-          style={char === ' ' ? { display: 'inline-block', width: '0.28em' } : style}
-        >
-          {char === ' ' ? ' ' : char}
-        </motion.span>
-      ))}
-    </>
-  )
-}
-
-function MobileLiveCounter() {
-  const [count, setCount] = useState(67)
-
+function ParticleCanvas() {
+  const canvasRef = useRef(null)
   useEffect(() => {
-    let timeout
-    const tick = () => {
-      setCount(v => Math.min(98, Math.max(54, v + Math.floor(Math.random() * 5) - 2)))
-      timeout = setTimeout(tick, Math.random() * 4000 + 4000)
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    let raf
+    const isMobile = window.innerWidth < 768
+    const MAX = isMobile ? 20 : 50
+
+    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight }
+    resize()
+    window.addEventListener('resize', resize)
+
+    const particles = Array.from({ length: MAX }, () => ({
+      x: Math.random() * canvas.width,
+      y: canvas.height + Math.random() * 200,
+      r: Math.random() * 2 + 0.5,
+      speed: Math.random() * 0.5 + 0.2,
+      opacity: Math.random() * 0.5 + 0.1,
+    }))
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      particles.forEach(p => {
+        p.y -= p.speed
+        if (p.y < -10) { p.y = canvas.height + 10; p.x = Math.random() * canvas.width }
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,215,0,${p.opacity})`
+        ctx.fill()
+      })
+      raf = requestAnimationFrame(draw)
     }
-    timeout = setTimeout(tick, Math.random() * 4000 + 4000)
-    return () => clearTimeout(timeout)
+    draw()
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize) }
   }, [])
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.5 }}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-      style={{ background: 'rgba(255,215,0,0.07)', border: '1px solid rgba(255,215,0,0.18)' }}
-    >
-      <span className="relative flex h-1.5 w-1.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-70" />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400"
-              style={{ boxShadow: '0 0 5px rgba(52,211,153,0.9)' }} />
-      </span>
-      <motion.span
-        key={count}
-        initial={{ opacity: 0, y: -3 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-xs font-body font-medium text-white/60"
-      >
-        <span className="text-white font-bold">{count}</span> viewing
-      </motion.span>
-    </motion.div>
-  )
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden />
 }
 
 export default function Hero() {
   return (
-    <section className="relative flex flex-col items-center justify-center text-center px-4 pt-24 pb-10 overflow-hidden"
-      style={{ minHeight: 'calc(100svh - 0px)' }}>
+    <section
+      data-hero
+      className="relative flex flex-col items-center justify-center text-center px-4 overflow-hidden"
+      style={{
+        minHeight: '100svh',
+        paddingTop: 120,
+        paddingBottom: 48,
+        background: 'radial-gradient(ellipse 100% 60% at 50% 0%, rgba(255,215,0,0.12) 0%, transparent 65%), #080808',
+      }}
+    >
+      <ParticleCanvas />
 
-      {/* Ambient glow */}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-        style={{
-          width: 700, height: 400,
-          background: 'radial-gradient(ellipse, rgba(255,215,0,0.06) 0%, transparent 70%)',
-          filter: 'blur(40px)',
-        }}
-      />
+      <div className="relative max-w-lg mx-auto w-full" style={{ zIndex: 2 }}>
+        {/* Headline */}
+        <h1 className="font-display leading-none tracking-tight mb-8" style={{ fontSize: 'clamp(2rem, 8.5vw, 5.5rem)' }}>
+          <span className="block text-white">THE RESELLING SYSTEM</span>
+          <span className="block text-white">THAT ACTUALLY</span>
+          <span className="block gold-text">MAKES YOU MONEY</span>
+        </h1>
 
-      {/* Live counter — top right, visible on all sizes */}
-      <div className="absolute top-20 right-4 md:hidden">
-        <MobileLiveCounter />
+        {/* Trust line */}
+        <div className="flex items-center justify-center gap-2 mb-5 flex-wrap">
+          <span className="font-display text-white text-2xl sm:text-3xl">Trusted by</span>
+          <span className="font-display text-2xl sm:text-3xl gold-text">1,000+</span>
+          <span className="font-display text-white text-2xl sm:text-3xl">Resellers</span>
+        </div>
+
+        {/* Avatars */}
+        <div className="flex items-center justify-center mb-6">
+          {AVATAR_DATA.map((a, i) => (
+            <div
+              key={i}
+              className="w-9 h-9 rounded-full flex items-center justify-center font-body font-bold text-xs text-dark shrink-0"
+              style={{
+                background: a.c,
+                border: '2px solid #080808',
+                boxShadow: '0 0 8px rgba(255,215,0,0.35)',
+                marginLeft: i === 0 ? 0 : -8,
+                position: 'relative',
+                zIndex: AVATAR_DATA.length - i,
+              }}
+            >
+              {a.i}
+            </div>
+          ))}
+          <span className="ml-3 font-body text-white/45 text-xs">& thousands more</span>
+        </div>
+
+        {/* Urgency badge */}
+        <div className="flex justify-center mb-8">
+          <div
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-xs font-bold"
+            style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.4)', color: '#FFD700' }}
+          >
+            🔥 Limited spots available at current price
+          </div>
+        </div>
+
+        {/* CTAs */}
+        <div className="flex flex-col gap-3 w-full" style={{ maxWidth: 400, margin: '0 auto' }}>
+          <a
+            href="/signup"
+            className="btn-gold rounded-full font-body font-bold text-base text-dark text-center"
+            style={{ padding: '16px 24px', minHeight: 52, display: 'block' }}
+          >
+            START MAKING MONEY →
+          </a>
+          <a
+            href={VENDORS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-gold-outline rounded-full font-body font-semibold text-base text-center"
+            style={{ padding: '16px 24px', minHeight: 52, display: 'block' }}
+          >
+            BROWSE VENDORS
+          </a>
+        </div>
       </div>
-
-      {/* Badge */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.05 }}
-        className="mb-5 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-body font-semibold tracking-widest uppercase"
-        style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.22)', color: '#FFD700' }}
-      >
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-gold" />
-        </span>
-        2,400+ active resellers
-      </motion.div>
-
-      {/* Headline — letter by letter, mobile-first size */}
-      <h1
-        className="font-display leading-none tracking-wide mb-4 w-full"
-        style={{ fontSize: 'clamp(28px, 8.5vw, 72px)' }}
-      >
-        <LetterReveal text={HEADLINE} style={goldStyle} baseDelay={0.15} globalOffset={0} />
-      </h1>
-
-      {/* Subheadline — one line */}
-      <motion.p
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 1.1 }}
-        className="font-body text-white/55 mb-8 leading-snug"
-        style={{ fontSize: 'clamp(13px, 3.5vw, 17px)', maxWidth: 360 }}
-      >
-        Real vendors and guides to start making money today.
-      </motion.p>
-
-      {/* CTAs — stacked, full width on mobile */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 1.25 }}
-        className="flex flex-col gap-3 w-full"
-        style={{ maxWidth: 380 }}
-      >
-        <a
-          href="/signup"
-          className="btn-gold rounded-full text-dark font-body font-bold text-base text-center active:scale-[0.97] transition-transform"
-          style={{ padding: '15px 24px', minHeight: 52 }}
-        >
-          Start For Free
-        </a>
-        <a
-          href={VENDORS_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn-gold-outline rounded-full font-body font-semibold text-base text-center active:scale-[0.97] transition-transform"
-          style={{ padding: '15px 24px', minHeight: 52 }}
-        >
-          Browse Vendors ↗
-        </a>
-      </motion.div>
     </section>
   )
 }
