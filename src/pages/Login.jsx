@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import GoldParticles from '../components/GoldParticles'
-import { login, getSession, restoreAccessFromStripe } from '../utils/auth'
+import { logIn, getSession, restoreAccess as restoreAccessFromStripe } from '../auth'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -39,8 +39,8 @@ export default function Login() {
     setRestoreLoad(true); setRestoreErr('')
 
     // Check local storage first — fastest path
-    const { getUser, setSession } = await import('../utils/userStore')
-    const localUser = getUser(restoreEmail.trim())
+    const { findUser, setSession } = await import('../auth')
+    const localUser = findUser(restoreEmail.trim())
     if (localUser) {
       setSession(localUser)
       setRestoreOk(`Welcome back! ${localUser.planDisplay || 'Access'} restored. Redirecting…`)
@@ -74,9 +74,9 @@ export default function Login() {
     e.preventDefault()
     if (!email || !password) { setError('Please fill in all fields.'); return }
     setLoading(true); setError('')
-    const result = login(email, password)
+    const result = logIn(email, password)
     setLoading(false)
-    if (result.error) { setError(result.error); return }
+    if (!result.success) { setError(result.error); return }
     navigate('/dashboard', { replace: true })
   }
 

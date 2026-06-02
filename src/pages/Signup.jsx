@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import GoldParticles from '../components/GoldParticles'
-import { signup, getSession } from '../utils/auth'
+import { signUp, getSession } from '../auth'
 
 function EyeIcon({ open }) {
   return open ? (
@@ -38,9 +38,9 @@ export default function Signup() {
     if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
     if (password !== confirm) { setError('Passwords do not match.'); return }
     setLoading(true); setError('')
-    const result = signup(email, password)
+    const result = signUp(email, password)
     setLoading(false)
-    if (result.error) { setError(result.error); return }
+    if (!result.success) { setError(result.error); return }
     navigate('/dashboard', { replace: true })
   }
 

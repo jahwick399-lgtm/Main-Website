@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import { getSession } from './utils/auth'
-import { migrateOldUsers, checkAndExpireSubscriptions } from './utils/userStore'
+import { getSession, migrateOldUsers, checkAndExpireSubscriptions } from './auth'
 import CursorDot from './components/CursorDot'
 import GoldParticles from './components/GoldParticles'
 import MeshBackground from './components/MeshBackground'

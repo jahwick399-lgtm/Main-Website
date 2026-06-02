@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { updateOrCreateUserFromStripe, setPasswordForUser } from '../utils/auth'
+import { applyPaidTier, setPasswordForUser } from '../auth'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -105,11 +105,8 @@ export default function Success() {
         }))
 
         // Find or create user with full subscription dates saved permanently
-        const isNewUser = updateOrCreateUserFromStripe(email, tier, {
-          subscriptionId:  data.subscriptionId,
-          stripeSessionId: session_id,
-          paidAt:          now,
-        })
+        const user      = applyPaidTier(email, tier, session_id)
+        const isNewUser = !user.password
 
         setUserEmail(email)
         setPlanDisplay(data.planDisplay)

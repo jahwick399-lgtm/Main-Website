@@ -5,8 +5,8 @@ import { COURSE_MODULES, canAccess } from '../data/courseContent'
 import { SUPPLIER_MODULES } from '../data/supplierContent'
 import { ALL_VENDORS } from '../data/vendorData'
 import { MILESTONES } from '../data/milestones'
-import { getSession, clearSession, getUsers, updateUserTier } from '../utils/auth'
-import { getUser, setSession as syncSession, checkAndExpireSubscriptions, getDaysRemaining, isInGracePeriod } from '../utils/userStore'
+import { getSession, clearSession } from '../utils/auth'
+import { findUser as getUser, setSession as syncSession, checkAndExpireSubscriptions, getDaysRemaining, isInGracePeriod } from '../auth'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
