@@ -2487,6 +2487,13 @@ export default function Dashboard() {
     checkAndExpireSubscriptions()
 
     const session = getSession()
+
+    console.log('DASHBOARD DEBUG:', {
+      session,
+      rp_users: JSON.parse(localStorage.getItem('rp_users') || '[]'),
+      fl_users: JSON.parse(localStorage.getItem('fl_users') || '{}'),
+    })
+
     if (!session?.email) { navigate('/login', { replace: true }); return }
 
     // Admin — bypass all checks
