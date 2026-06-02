@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { getSession } from './utils/auth'
+import { migrateOldUsers, checkAndExpireSubscriptions } from './utils/userStore'
 import CursorDot from './components/CursorDot'
 import GoldParticles from './components/GoldParticles'
 import MeshBackground from './components/MeshBackground'
@@ -66,6 +68,13 @@ function LandingPage() {
 }
 
 export default function App() {
+  useEffect(() => {
+    migrateOldUsers()
+    checkAndExpireSubscriptions()
+    const interval = setInterval(checkAndExpireSubscriptions, 24 * 60 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <BrowserRouter>
       <CursorDot />

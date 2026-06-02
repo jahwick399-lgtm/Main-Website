@@ -1,84 +1,84 @@
+// auth.js — thin wrapper around userStore.
+// All function signatures kept for backward compatibility.
+
+import {
+  getUsers as _getUsers,
+  getUser,
+  saveUser,
+  getSession as _getSession,
+  setSession as _setSession,
+  clearSession as _clearSession,
+  updateUserTier as _updateUserTier,
+  updateOrCreateUserFromStripe as _updateOrCreateUserFromStripe,
+  setPasswordForUser as _setPasswordForUser,
+  restoreAccessFromStripe as _restoreAccessFromStripe,
+} from './userStore'
+
 const ADMIN_EMAIL    = 'jahwick399@gmail.com'
 const ADMIN_PASSWORD = 'Admin123'
 
-export function getUsers() {
-  try { return JSON.parse(localStorage.getItem('fl_users') || '{}') } catch { return {} }
-}
-
-export function getSession() {
-  try { return JSON.parse(localStorage.getItem('fl_session') || 'null') } catch { return null }
-}
-
-export function setSession(email, tier) {
-  localStorage.setItem('fl_session', JSON.stringify({ email, tier }))
-}
-
-export function clearSession() {
-  localStorage.removeItem('fl_session')
-  localStorage.removeItem('rm_subscription')
-  localStorage.removeItem('rm_free_tier')
-}
+// ─── Auth actions ─────────────────────────────────────────────────────────────
 
 export function signup(email, password) {
   const key = email.toLowerCase()
-  const users = getUsers()
-  if (users[key]) return { error: 'An account with this email already exists.' }
-  users[key] = { email: key, password, tier: 'free', createdAt: new Date().toISOString() }
-  localStorage.setItem('fl_users', JSON.stringify(users))
-  setSession(key, 'free')
+  const users = _getUsers()
+  if (users.find(u => u.email === key)) return { error: 'An account with this email already exists.' }
+  const newUser = {
+    email: key, password, tier: 'free', planDisplay: 'Free Plan',
+    createdAt: Date.now(), subscriptionActive: false,
+  }
+  saveUser(newUser)
+  _setSession(newUser)
   return { success: true }
 }
 
 export function login(email, password) {
   const key = email.toLowerCase()
+
   if (key === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-    setSession(key, 'admin')
+    const adminUser = { email: key, tier: 'admin', planDisplay: '👑 Admin' }
+    _setSession(adminUser)
     return { success: true, isAdmin: true }
   }
-  const users = getUsers()
-  const user = users[key]
+
+  const user = getUser(key)
   if (!user || user.password !== password) return { error: 'Incorrect email or password. Try again.' }
-  setSession(key, user.tier)
+
+  _setSession(user)
   return { success: true }
+}
+
+export function getSession() {
+  return _getSession()
+}
+
+export function clearSession() {
+  _clearSession()
+  // Keep rm_subscription so restore-access can still use it
+}
+
+// Returns array of all users (Admin page expects an object keyed by email for now)
+export function getUsers() {
+  const arr = _getUsers()
+  const obj = {}
+  arr.forEach(u => { obj[u.email] = u })
+  return obj
 }
 
 export function updateUserTier(email, tier) {
-  const users = getUsers()
-  const key = email.toLowerCase()
-  if (!users[key]) return
-  users[key].tier = tier
-  localStorage.setItem('fl_users', JSON.stringify(users))
+  _updateUserTier(email, tier)
 }
 
-// Called from Success page after Stripe payment confirmed.
-// Creates user if they don't exist, updates tier if they do.
-// Returns true if this is a brand new account (no password yet).
-export function updateOrCreateUserFromStripe(email, tier) {
-  const key   = email.toLowerCase()
-  const users = getUsers()
-  const isNew = !users[key]
-  if (isNew) {
-    users[key] = { email: key, password: null, tier, createdAt: new Date().toISOString(), fromStripe: true }
-  } else {
-    users[key].tier = tier
-  }
-  localStorage.setItem('fl_users', JSON.stringify(users))
-  setSession(key, tier)
+// Called from Success page after Stripe confirms payment
+export function updateOrCreateUserFromStripe(email, tier, opts = {}) {
+  const { isNew } = _updateOrCreateUserFromStripe(email, tier, opts)
   return isNew
 }
 
-// Set a password for an account created via Stripe (no prior password).
 export function setPasswordForUser(email, password) {
-  const users = getUsers()
-  const key   = email.toLowerCase()
-  if (!users[key]) return { error: 'Account not found.' }
-  users[key].password    = password
-  users[key].fromStripe  = false
-  localStorage.setItem('fl_users', JSON.stringify(users))
-  return { success: true }
+  return _setPasswordForUser(email, password)
 }
 
-// Restore access from Stripe data (already verified by caller).
 export function restoreAccessFromStripe(email, tier) {
-  updateOrCreateUserFromStripe(email, tier)
+  _restoreAccessFromStripe(email, tier)
 }

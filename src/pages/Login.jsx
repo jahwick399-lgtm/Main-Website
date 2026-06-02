@@ -37,15 +37,30 @@ export default function Login() {
     e.preventDefault()
     if (!restoreEmail) return setRestoreErr('Enter your email.')
     setRestoreLoad(true); setRestoreErr('')
+
+    // Check local storage first — fastest path
+    const { getUser, setSession } = await import('../utils/userStore')
+    const localUser = getUser(restoreEmail.trim())
+    if (localUser) {
+      setSession(localUser)
+      setRestoreOk(`Welcome back! ${localUser.planDisplay || 'Access'} restored. Redirecting…`)
+      setTimeout(() => navigate('/dashboard'), 1800)
+      return
+    }
+
+    // Fall back to Stripe lookup via backend
     try {
-      const res  = await fetch(`${API}/restore-access?email=${encodeURIComponent(restoreEmail)}`)
+      const res  = await fetch(`${API}/restore-access?email=${encodeURIComponent(restoreEmail.trim())}`)
       const data = await res.json()
-      if (!data.found) { setRestoreErr('No active subscription found for that email.'); setRestoreLoad(false); return }
+      if (!data.found) {
+        setRestoreErr('No account or subscription found for that email. Email support@fliplabs.shop with your receipt.')
+        setRestoreLoad(false); return
+      }
       restoreAccessFromStripe(data.email, data.tier)
       setRestoreOk(`Access restored — ${data.planDisplay}. Redirecting…`)
-      setTimeout(() => navigate('/dashboard'), 2000)
+      setTimeout(() => navigate('/dashboard'), 1800)
     } catch {
-      setRestoreErr('Could not connect. Try again.')
+      setRestoreErr('Could not connect. Try again in 30 seconds.')
       setRestoreLoad(false)
     }
   }

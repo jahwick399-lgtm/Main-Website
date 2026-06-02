@@ -92,19 +92,24 @@ export default function Success() {
 
         const email = (data.customerEmail || '').toLowerCase()
         const tier  = data.tier
+        const now   = Date.now()
 
-        // Save subscription details
+        // Save subscription details (kept for backward compat / billing lookup)
         localStorage.setItem('rm_subscription', JSON.stringify({
           subscriptionId: data.subscriptionId,
           tier,
           planDisplay:    data.planDisplay,
           email,
           content:        data.content,
-          verifiedAt:     Date.now(),
+          verifiedAt:     now,
         }))
 
-        // Find or create user and set session
-        const isNewUser = updateOrCreateUserFromStripe(email, tier)
+        // Find or create user with full subscription dates saved permanently
+        const isNewUser = updateOrCreateUserFromStripe(email, tier, {
+          subscriptionId:  data.subscriptionId,
+          stripeSessionId: session_id,
+          paidAt:          now,
+        })
 
         setUserEmail(email)
         setPlanDisplay(data.planDisplay)

@@ -6,6 +6,7 @@ import { SUPPLIER_MODULES } from '../data/supplierContent'
 import { ALL_VENDORS } from '../data/vendorData'
 import { MILESTONES } from '../data/milestones'
 import { getSession, clearSession, getUsers, updateUserTier } from '../utils/auth'
+import { getUser, setSession as syncSession, checkAndExpireSubscriptions, getDaysRemaining, isInGracePeriod } from '../utils/userStore'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -229,9 +230,9 @@ function VendorCard({ vendor, userTier, showCategory }) {
         {/* blurred content */}
         <div className="p-4 flex flex-col gap-3" style={{ filter: 'blur(5px)', pointerEvents: 'none' }}>
           <div className="font-body font-semibold text-white text-sm">{vendor.name}</div>
-          {vendor.price && (
-            <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full w-fit"
-              style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399' }}>{vendor.price}</span>
+          {vendor.subcategory && (
+            <span className="text-xs font-body px-2 py-0.5 rounded-full w-fit"
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.35)' }}>{vendor.subcategory}</span>
           )}
           <div className="w-full py-2.5 rounded-full text-xs font-body font-bold text-center"
             style={{ background: 'rgba(255,215,0,0.1)', color: '#FFD700' }}>Access Vendor →</div>
@@ -259,12 +260,6 @@ function VendorCard({ vendor, userTier, showCategory }) {
       <div className="flex-1 min-w-0">
         <div className="font-body font-semibold text-white text-sm leading-snug">{vendor.name}</div>
         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-          {vendor.price && (
-            <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
-              {vendor.price}
-            </span>
-          )}
           {vendor.subcategory && (
             <span className="text-[10px] font-body px-1.5 py-0.5 rounded-full"
               style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -2086,6 +2081,14 @@ function PlatformComparison() {
 // ─── Account section ──────────────────────────────────────────────────────────
 
 function AccountSection({ member, onManageBilling, onSignOut }) {
+  const user = getUser(member?.email || '')
+  const days = getDaysRemaining(user)
+  const grace = isInGracePeriod(user)
+  const isPaid = member.tier !== 'free' && member.tier !== 'admin'
+
+  const fmt = (ts) => ts ? new Date(ts).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'
+  const daysColor = days === null ? '' : days <= 2 ? '#f87171' : days <= 6 ? '#fbbf24' : '#34d399'
+
   return (
     <div className="space-y-5">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
@@ -2093,14 +2096,55 @@ function AccountSection({ member, onManageBilling, onSignOut }) {
         <p className="text-white/40 font-body text-sm">Manage your plan and access.</p>
       </motion.div>
 
+      {/* Subscription status card */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+        className="rounded-2xl p-5"
+        style={{ background: isPaid ? 'rgba(255,215,0,0.04)' : 'rgba(255,255,255,0.02)', border: `1px solid ${isPaid ? 'rgba(255,215,0,0.2)' : 'rgba(255,255,255,0.08)'}` }}>
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-body font-semibold text-white/60 text-xs uppercase tracking-widest">Subscription</span>
+          {isPaid && !grace
+            ? <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.25)' }}>✅ Active</span>
+            : grace
+            ? <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>⚠️ Grace Period</span>
+            : member.expiredAt
+            ? <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>❌ Expired</span>
+            : <span className="text-xs font-body font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)' }}>📋 Free</span>
+          }
+        </div>
+        <div className="space-y-2.5">
+          {[
+            ['Plan', <PlanBadge key="plan" tier={member.tier} planDisplay={member.planDisplay} />],
+            member.email && ['Email', <span key="email" className="text-white/60 font-body text-sm truncate max-w-[180px] block">{member.email}</span>],
+            isPaid && ['Started', <span key="start" className="text-white/50 font-body text-xs">{fmt(member.subscriptionStart)}</span>],
+            isPaid && member.subscriptionEnd && ['Renews', <span key="end" className="font-body text-xs font-semibold" style={{ color: daysColor }}>{fmt(member.subscriptionEnd)}</span>],
+            isPaid && days !== null && ['Days left', <span key="days" className="font-body text-sm font-bold" style={{ color: daysColor }}>{days > 0 ? days : 'Expired'}</span>],
+            member.expiredAt && !isPaid && ['Expired', <span key="exp" className="text-white/50 font-body text-xs">{fmt(member.expiredAt)}</span>],
+            member.subscriptionId && ['Ref #', <span key="ref" className="text-white/25 font-body text-xs font-mono">{member.subscriptionId.slice(-8)}</span>],
+          ].filter(Boolean).map(([label, content], i, arr) => (
+            <div key={i} className="flex items-center justify-between py-2"
+              style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+              <span className="text-white/35 font-body text-xs">{label}</span>
+              {content}
+            </div>
+          ))}
+        </div>
+        {(isPaid || grace) && (
+          <a href="/#plans" className="btn-gold w-full py-2.5 rounded-full text-dark font-body font-bold text-xs text-center block mt-4" style={{ minHeight: 40 }}>
+            {grace ? 'Renew Now →' : 'Renew Early →'}
+          </a>
+        )}
+        {(!isPaid && !grace) && (
+          <a href="/#plans" className="btn-gold w-full py-2.5 rounded-full text-dark font-body font-bold text-xs text-center block mt-4" style={{ minHeight: 40 }}>
+            {member.expiredAt ? 'Reactivate Access →' : 'Upgrade Plan →'}
+          </a>
+        )}
+      </motion.div>
+
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="glass-card rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(255,215,0,0.12)' }}>
         {[
-          { label: 'Current Plan', content: <PlanBadge tier={member.tier} planDisplay={member.planDisplay} /> },
-          member.email ? { label: 'Email', content: <span className="text-white/60 font-body text-sm truncate max-w-[180px] block">{member.email}</span> } : null,
           { label: 'Billing', content: <button onClick={onManageBilling} className="text-sm font-body font-semibold min-h-[44px]" style={{ color: '#FFD700' }}>Manage Billing ↗</button> },
-          (member.tier !== 'pro' && member.tier !== 'admin') ? { label: 'Upgrade', content: <a href="/#plans" className="text-sm font-body font-semibold min-h-[44px] flex items-center" style={{ color: '#FFD700' }}>View Plans ↗</a> } : null,
-          { label: 'Support', content: <a href="mailto:support@fliplabs.com" className="text-sm font-body text-white/50 hover:text-white/80 min-h-[44px] flex items-center">support@fliplabs.com ↗</a> },
+          { label: 'Support', content: <a href="mailto:support@fliplabs.shop" className="text-sm font-body text-white/50 hover:text-white/80 min-h-[44px] flex items-center">support@fliplabs.shop ↗</a> },
         ].filter(Boolean).map((row, i, arr) => (
           <div key={i} className="flex items-center justify-between px-5 py-3 min-h-[56px]"
             style={{ borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
@@ -2113,7 +2157,7 @@ function AccountSection({ member, onManageBilling, onSignOut }) {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
         className="rounded-xl p-4 text-center" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
         <p className="text-white/30 font-body text-xs leading-relaxed">
-          To cancel your subscription, use "Manage Billing" above or email <span className="text-white/50">support@fliplabs.com</span>
+          Having issues? Email <span className="text-white/50">support@fliplabs.shop</span> with your receipt — we fix access problems within 1 hour.
         </p>
       </motion.div>
 
@@ -2416,6 +2460,10 @@ export default function Dashboard() {
   const [activeLesson, setActiveLesson]               = useState(null)
   const [activeLessonModule, setActiveLessonModule]   = useState(null)
   const [showOnboarding, setShowOnboarding]           = useState(false)
+  const [expiryDismissed, setExpiryDismissed]         = useState(() => {
+    const d = localStorage.getItem('fl_expiry_dismiss')
+    return d === new Date().toDateString()
+  })
 
   // Flat list of all accessible lessons for Next Lesson navigation
   const allAccessibleLessons = member
@@ -2435,14 +2483,18 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    const session = getSession()
-    if (!session) { navigate('/login', { replace: true }); return }
+    // Run expiry check on every dashboard load
+    checkAndExpireSubscriptions()
 
-    if (session.tier === 'admin') {
+    const session = getSession()
+    if (!session?.email) { navigate('/login', { replace: true }); return }
+
+    // Admin — bypass all checks
+    if (session.tier === 'admin' || session.email === 'jahwick399@gmail.com') {
       fetch(`${API}/admin-member-content?email=${encodeURIComponent(session.email)}`)
         .then(r => r.json())
         .then(data => {
-          if (data.error) { setError('Admin access error.'); setLoading(false); return }
+          if (data.error) throw new Error()
           setMember({ ...data, email: session.email })
           setLoading(false)
         })
@@ -2457,28 +2509,52 @@ export default function Dashboard() {
       return
     }
 
-    const stored = localStorage.getItem('rm_subscription')
-    if (!stored) {
-      const freeMember = { ...FREE_MEMBER, customerEmail: session.email, tier: session.tier === 'free' ? 'free' : session.tier }
-      setMember(freeMember)
-      setLoading(false)
-      return
-    }
-    const parsed = JSON.parse(stored)
+    // ── SOURCE OF TRUTH: read tier from the user object in rp_users ──
+    // Fall back to session tier if user record missing (e.g. admin manual fix)
+    const user = getUser(session.email)
+    const tier = user?.tier ?? session.tier ?? 'free'
 
-    fetch(`${API}/subscription-status?sub_id=${parsed.subscriptionId}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.error) { localStorage.removeItem('rm_subscription'); setMember({ ...FREE_MEMBER, customerEmail: session.email }); setLoading(false); return }
-        const fresh = { ...parsed, ...data, verifiedAt: Date.now(), customerEmail: session.email }
-        localStorage.setItem('rm_subscription', JSON.stringify(fresh))
-        setMember(fresh); setLoading(false)
-      })
-      .catch(() => {
-        const age = Date.now() - (parsed.verifiedAt || 0)
-        if (age < 3600000 && parsed.content) { setMember({ ...parsed, customerEmail: session.email }); setLoading(false) }
-        else { setError('Could not connect. Check your connection.'); setLoading(false) }
-      })
+    // Sync session if tier drifted (e.g. admin changed it, or expiry ran)
+    if (user && user.tier !== session.tier) {
+      syncSession(user)
+    }
+
+    const planDisplay = {
+      free: 'Free Plan', beginner: 'Beginner Plan',
+      intermediate: 'Intermediate Plan', pro: 'Pro Plan',
+    }[tier] || 'Free Plan'
+
+    // Build member immediately from local data — no network required
+    setMember({
+      tier,
+      planDisplay,
+      subscriptionId:     user?.subscriptionId   || null,
+      stripeSessionId:    user?.stripeSessionId  || null,
+      customerEmail:      session.email,
+      email:              session.email,
+      paidAt:             user?.paidAt            || null,
+      subscriptionStart:  user?.subscriptionStart || null,
+      subscriptionEnd:    user?.subscriptionEnd   || null,
+      subscriptionActive: user?.subscriptionActive || tier !== 'free',
+      graceUntil:         user?.graceUntil        || null,
+      expiredAt:          user?.expiredAt         || null,
+      content: { categories: [], lockedCategories: [], guides: [] },
+    })
+    setLoading(false)
+
+    // Async sync billing details from Stripe — does NOT affect tier/access
+    if (user?.subscriptionId && tier !== 'free') {
+      fetch(`${API}/subscription-status?sub_id=${user.subscriptionId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.error || !data.tier) return
+          setMember(prev => prev ? {
+            ...prev,
+            planDisplay: data.planDisplay || prev.planDisplay,
+          } : prev)
+        })
+        .catch(() => {})
+    }
   }, [])
 
   useEffect(() => {
@@ -2638,6 +2714,38 @@ export default function Dashboard() {
       {/* Main content */}
       <main className="md:ml-56 min-h-screen pt-14 md:pt-0 pb-24 md:pb-0">
         <div className="max-w-2xl mx-auto px-4 py-6">
+
+          {/* Expiry warning banner — 3 days before expiry */}
+          {(() => {
+            const user = getUser(member?.email || '')
+            const days = getDaysRemaining(user)
+            const grace = isInGracePeriod(user)
+            if (expiryDismissed || !user || member?.tier === 'free' || member?.tier === 'admin') return null
+            if (grace) return (
+              <div className="mb-4 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                <p className="font-body text-sm font-semibold" style={{ color: '#f87171' }}>
+                  🚨 Subscription expired — renew now or lose access in {Math.ceil(((user.graceUntil||0) - Date.now()) / 86400000)} days
+                </p>
+                <a href="/#plans" className="btn-gold px-3 py-1.5 rounded-full text-dark font-body font-bold text-xs whitespace-nowrap" style={{ minHeight: 36 }}>Renew →</a>
+              </div>
+            )
+            if (days !== null && days <= 3 && days > 0) return (
+              <div className="mb-4 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                style={{ background: 'rgba(255,215,0,0.07)', border: '1px solid rgba(255,215,0,0.3)' }}>
+                <p className="font-body text-sm" style={{ color: '#FFD700' }}>
+                  ⚠️ Your subscription expires in <strong>{days} day{days !== 1 ? 's' : ''}</strong> — renew to keep your access
+                </p>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <a href="/#plans" className="btn-gold px-3 py-1.5 rounded-full text-dark font-body font-bold text-xs" style={{ minHeight: 36 }}>Renew →</a>
+                  <button onClick={() => { setExpiryDismissed(true); localStorage.setItem('fl_expiry_dismiss', new Date().toDateString()) }}
+                    className="text-white/30 hover:text-white/60 text-xs font-body">✕</button>
+                </div>
+              </div>
+            )
+            return null
+          })()}
+
           <AnimatePresence mode="wait">
             <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
               {renderTab()}
