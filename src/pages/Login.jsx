@@ -70,13 +70,13 @@ export default function Login() {
     if (session) navigate('/dashboard', { replace: true })
   }, [navigate])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!email || !password) { setError('Please fill in all fields.'); return }
     setLoading(true); setError('')
-    const result = logIn(email, password)
+    const result = await logIn(email, password)
     setLoading(false)
-    if (!result.success) { setError(result.error); return }
+    if (!result.success) { setError(result.error || 'Something went wrong. Try again.'); return }
     navigate('/dashboard', { replace: true })
   }
 

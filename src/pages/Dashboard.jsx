@@ -6,7 +6,7 @@ import { SUPPLIER_MODULES } from '../data/supplierContent'
 import { ALL_VENDORS } from '../data/vendorData'
 import { MILESTONES } from '../data/milestones'
 import { getSession, clearSession } from '../utils/auth'
-import { findUser as getUser, setSession as syncSession, checkAndExpireSubscriptions, getDaysRemaining, isInGracePeriod } from '../auth'
+import { getCurrentUser, getDaysRemaining, isInGracePeriod, ADMIN_EMAIL } from '../auth'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -2291,157 +2291,128 @@ function OnboardingModal({ onClose, setTab }) {
 const TIER_OPTIONS = ['free', 'beginner', 'intermediate', 'pro']
 
 function AdminSection() {
-  const [users, setUsers]         = useState(() => {
-    const raw = getUsers()
-    return Object.values(raw)
-  })
-  const [search, setSearch]       = useState('')
-  const [saved, setSaved]         = useState({})
-  const [pendingTiers, setPending] = useState({})
-  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [users,        setUsers]        = useState([])
+  const [search,       setSearch]       = useState('')
+  const [pendingTiers, setPending]      = useState({})
+  const [saved,        setSaved]        = useState({})
+  const [loading,      setLoading]      = useState(true)
+  const [toast,        setToast]        = useState('')
 
-  const refreshUsers = () => setUsers(Object.values(getUsers()))
+  const adminEmail = ADMIN_EMAIL
 
-  const filtered = users.filter(u =>
-    u.email.toLowerCase().includes(search.toLowerCase())
-  )
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
 
-  const handleTierChange = (email, tier) => {
-    setPending(p => ({ ...p, [email]: tier }))
+  const fetchUsers = async () => {
+    try {
+      const res  = await fetch(`${API}/auth/admin/users?adminEmail=${encodeURIComponent(adminEmail)}`)
+      const data = await res.json()
+      if (data.success) setUsers(data.users)
+    } catch { setUsers([]) }
+    setLoading(false)
   }
 
-  const handleSave = (email) => {
+  useEffect(() => { fetchUsers() }, [])
+
+  const adminAction = async (email, action, tier) => {
+    try {
+      await fetch(`${API}/auth/admin/update-user`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminEmail, email, action, tier }),
+      })
+      await fetchUsers()
+      showToast(action === 'extend' ? `+30 days for ${email}` : action === 'lifetime' ? `Lifetime for ${email}` : action === 'reset' ? `Reset ${email} to free` : `Updated ${email} → ${tier}`)
+    } catch { showToast('Error — try again') }
+  }
+
+  const handleSave = async (email) => {
     const tier = pendingTiers[email]
     if (!tier) return
-    updateUserTier(email, tier)
-    refreshUsers()
+    await adminAction(email, null, tier)
     setSaved(p => ({ ...p, [email]: true }))
     setTimeout(() => setSaved(p => { const n = { ...p }; delete n[email]; return n }), 1500)
   }
 
-  const handleDelete = (email) => {
-    const raw = getUsers()
-    delete raw[email]
-    localStorage.setItem('fl_users', JSON.stringify(raw))
-    refreshUsers()
-    setConfirmDelete(null)
-  }
-
-  const exportCSV = () => {
-    const header = 'Email,Tier,Joined\n'
-    const rows = users.map(u => `${u.email},${u.tier},${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}`).join('\n')
-    const blob = new Blob([header + rows], { type: 'text/csv' })
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'flip-labs-users.csv'; a.click()
-  }
+  const filtered = users.filter(u => u.email.toLowerCase().includes(search.toLowerCase()))
 
   return (
     <div className="space-y-5">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-        <h2 className="font-display text-2xl sm:text-3xl text-white mb-1">
-          🛡️ <span className="gold-text">Admin</span> Panel
-        </h2>
-        <p className="text-white/40 font-body text-sm">Manage users, tiers, and exports.</p>
+        <h2 className="font-display text-2xl sm:text-3xl text-white mb-1">🛡️ <span className="gold-text">Admin</span> Panel</h2>
+        <p className="text-white/40 font-body text-sm">Manage users and tiers.</p>
       </motion.div>
 
-      {/* Stats + export */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-        className="flex items-center justify-between gap-3 p-4 rounded-2xl"
+      {toast && (
+        <div className="rounded-xl px-4 py-3 font-body text-sm font-semibold text-center"
+          style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', color: '#FFD700' }}>
+          {toast}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between gap-3 p-4 rounded-2xl"
         style={{ background: 'rgba(255,215,0,0.05)', border: '1px solid rgba(255,215,0,0.18)' }}>
         <div>
           <div className="font-display text-3xl gold-text">{users.length}</div>
           <div className="text-white/40 font-body text-xs">Total Users</div>
         </div>
-        <button onClick={exportCSV}
+        <button onClick={fetchUsers}
           className="px-4 py-2.5 rounded-full text-sm font-body font-bold min-h-[44px]"
           style={{ background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', color: '#FFD700' }}>
-          Export CSV ↓
+          Refresh ↺
         </button>
-      </motion.div>
-
-      {/* Search */}
-      <input
-        type="text"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        placeholder="Search users by email…"
-        className="w-full px-4 py-3 rounded-xl font-body text-sm text-white placeholder-white/20 outline-none"
-        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}
-      />
-
-      {/* User list */}
-      <div className="space-y-2">
-        {filtered.length === 0 && (
-          <p className="text-white/30 font-body text-sm text-center py-6">No users found.</p>
-        )}
-        {filtered.map((u, i) => (
-          <motion.div key={u.email} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-            className="rounded-2xl p-4 space-y-3"
-            style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-white/80 font-body text-sm font-semibold truncate">{u.email}</div>
-                <div className="text-white/30 font-body text-xs mt-0.5">
-                  Joined {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'}
-                </div>
-              </div>
-              <button onClick={() => setConfirmDelete(u.email)}
-                className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-body font-bold min-h-[32px] flex items-center"
-                style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}>
-                Delete
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={pendingTiers[u.email] ?? u.tier}
-                onChange={e => handleTierChange(u.email, e.target.value)}
-                className="flex-1 px-3 py-2 rounded-xl text-sm font-body text-white outline-none"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                {TIER_OPTIONS.map(t => <option key={t} value={t} style={{ background: '#111' }}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-              </select>
-              <button onClick={() => handleSave(u.email)}
-                disabled={!pendingTiers[u.email] || pendingTiers[u.email] === u.tier}
-                className="px-4 py-2 rounded-xl text-sm font-body font-bold min-h-[40px] transition-all"
-                style={{
-                  background: saved[u.email] ? 'rgba(52,211,153,0.15)' : 'rgba(255,215,0,0.1)',
-                  border: `1px solid ${saved[u.email] ? 'rgba(52,211,153,0.3)' : 'rgba(255,215,0,0.25)'}`,
-                  color: saved[u.email] ? '#34d399' : '#FFD700',
-                  opacity: (!pendingTiers[u.email] || pendingTiers[u.email] === u.tier) && !saved[u.email] ? 0.4 : 1,
-                }}>
-                {saved[u.email] ? '✓ Saved' : 'Save'}
-              </button>
-            </div>
-          </motion.div>
-        ))}
       </div>
 
-      {/* Delete confirm dialog */}
-      <AnimatePresence>
-        {confirmDelete && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center px-4"
-            style={{ background: 'rgba(0,0,0,0.8)' }}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-sm rounded-2xl p-6 space-y-4"
-              style={{ background: '#111', border: '1px solid rgba(239,68,68,0.3)' }}>
-              <h3 className="font-display text-xl text-white">Delete User?</h3>
-              <p className="text-white/50 font-body text-sm break-all">{confirmDelete}</p>
-              <p className="text-white/35 font-body text-xs">This removes them from localStorage. It cannot be undone.</p>
-              <div className="flex gap-3">
-                <button onClick={() => setConfirmDelete(null)}
-                  className="flex-1 py-3 rounded-xl font-body font-semibold text-sm"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>
-                  Cancel
+      <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+        placeholder="Search by email…"
+        className="w-full px-4 py-3 rounded-xl font-body text-sm text-white placeholder-white/20 outline-none"
+        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }} />
+
+      {loading ? (
+        <p className="text-white/30 font-body text-sm text-center py-6">Loading users…</p>
+      ) : (
+        <div className="space-y-2">
+          {filtered.length === 0 && <p className="text-white/30 font-body text-sm text-center py-6">No users found.</p>}
+          {filtered.map((u, i) => (
+            <motion.div key={u.email} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+              className="rounded-2xl p-4 space-y-3"
+              style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <div className="min-w-0">
+                <div className="text-white/80 font-body text-sm font-semibold truncate">{u.email}</div>
+                <div className="text-white/30 font-body text-xs mt-0.5 flex items-center gap-2">
+                  <span className="capitalize">{u.tier}</span>
+                  {u.subscriptionEnd && <span>· expires {new Date(u.subscriptionEnd).toLocaleDateString()}</span>}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <select value={pendingTiers[u.email] ?? u.tier} onChange={e => setPending(p => ({ ...p, [u.email]: e.target.value }))}
+                  className="flex-1 px-3 py-2 rounded-xl text-sm font-body text-white outline-none min-w-[120px]"
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  {TIER_OPTIONS.map(t => <option key={t} value={t} style={{ background: '#111' }}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                </select>
+                <button onClick={() => handleSave(u.email)}
+                  className="px-3 py-2 rounded-xl text-xs font-body font-bold min-h-[40px]"
+                  style={{ background: saved[u.email] ? 'rgba(52,211,153,0.15)' : 'rgba(255,215,0,0.1)', border: `1px solid ${saved[u.email] ? 'rgba(52,211,153,0.3)' : 'rgba(255,215,0,0.25)'}`, color: saved[u.email] ? '#34d399' : '#FFD700' }}>
+                  {saved[u.email] ? '✓' : 'Save'}
                 </button>
-                <button onClick={() => handleDelete(confirmDelete)}
-                  className="flex-1 py-3 rounded-xl font-body font-bold text-sm"
-                  style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444' }}>
-                  Delete
+                <button onClick={() => adminAction(u.email, 'extend')}
+                  className="px-3 py-2 rounded-xl text-xs font-body font-bold min-h-[40px]"
+                  style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.25)', color: '#34d399' }}>
+                  +30d
+                </button>
+                <button onClick={() => adminAction(u.email, 'lifetime')}
+                  className="px-3 py-2 rounded-xl text-xs font-body font-bold min-h-[40px]"
+                  style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid rgba(255,215,0,0.2)', color: '#FFD700' }}>
+                  ∞
+                </button>
+                <button onClick={() => adminAction(u.email, 'reset')}
+                  className="px-3 py-2 rounded-xl text-xs font-body font-bold min-h-[40px]"
+                  style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+                  Free
                 </button>
               </div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -2483,21 +2454,11 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    // Run expiry check on every dashboard load
-    checkAndExpireSubscriptions()
-
     const session = getSession()
-
-    console.log('DASHBOARD DEBUG:', {
-      session,
-      rp_users: JSON.parse(localStorage.getItem('rp_users') || '[]'),
-      fl_users: JSON.parse(localStorage.getItem('fl_users') || '{}'),
-    })
-
     if (!session?.email) { navigate('/login', { replace: true }); return }
 
-    // Admin — bypass all checks
-    if (session.tier === 'admin' || session.email === 'jahwick399@gmail.com') {
+    // Admin — load from backend admin endpoint
+    if (session.tier === 'admin' || session.email === ADMIN_EMAIL) {
       fetch(`${API}/admin-member-content?email=${encodeURIComponent(session.email)}`)
         .then(r => r.json())
         .then(data => {
@@ -2506,62 +2467,28 @@ export default function Dashboard() {
           setLoading(false)
         })
         .catch(() => {
-          setMember({
-            tier: 'admin', planDisplay: '👑 Admin', subscriptionId: 'admin',
-            email: session.email, customerEmail: session.email,
-            content: { categories: [], lockedCategories: [], guides: [] },
-          })
+          setMember({ tier: 'admin', planDisplay: '👑 Admin', subscriptionId: 'admin', email: session.email, customerEmail: session.email, content: { categories: [], lockedCategories: [], guides: [] } })
           setLoading(false)
         })
       return
     }
 
-    // ── SOURCE OF TRUTH: read tier from the user object in rp_users ──
-    // Fall back to session tier if user record missing (e.g. admin manual fix)
-    const user = getUser(session.email)
-    const tier = user?.tier ?? session.tier ?? 'free'
+    // Get user from backend — source of truth for tier
+    getCurrentUser().then(user => {
+      if (!user) { navigate('/login', { replace: true }); return }
+      const tier = user.tier || 'free'
+      const LABELS = { free:'Free Plan', beginner:'Beginner Plan', intermediate:'Intermediate Plan', pro:'Pro Plan' }
+      setMember({
+        tier, planDisplay: LABELS[tier] || 'Free Plan',
+        email: user.email, customerEmail: user.email,
+        subscriptionEnd: user.subscriptionEnd || null,
+        subscriptionActive: user.subscriptionActive || false,
+        content: { categories: [], lockedCategories: [], guides: [] },
+      })
+      setLoading(false)
 
-    // Sync session if tier drifted (e.g. admin changed it, or expiry ran)
-    if (user && user.tier !== session.tier) {
-      syncSession(user)
-    }
-
-    const planDisplay = {
-      free: 'Free Plan', beginner: 'Beginner Plan',
-      intermediate: 'Intermediate Plan', pro: 'Pro Plan',
-    }[tier] || 'Free Plan'
-
-    // Build member immediately from local data — no network required
-    setMember({
-      tier,
-      planDisplay,
-      subscriptionId:     user?.subscriptionId   || null,
-      stripeSessionId:    user?.stripeSessionId  || null,
-      customerEmail:      session.email,
-      email:              session.email,
-      paidAt:             user?.paidAt            || null,
-      subscriptionStart:  user?.subscriptionStart || null,
-      subscriptionEnd:    user?.subscriptionEnd   || null,
-      subscriptionActive: user?.subscriptionActive || tier !== 'free',
-      graceUntil:         user?.graceUntil        || null,
-      expiredAt:          user?.expiredAt         || null,
-      content: { categories: [], lockedCategories: [], guides: [] },
+      console.log('DASHBOARD:', { email: user.email, tier })
     })
-    setLoading(false)
-
-    // Async sync billing details from Stripe — does NOT affect tier/access
-    if (user?.subscriptionId && tier !== 'free') {
-      fetch(`${API}/subscription-status?sub_id=${user.subscriptionId}`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.error || !data.tier) return
-          setMember(prev => prev ? {
-            ...prev,
-            planDisplay: data.planDisplay || prev.planDisplay,
-          } : prev)
-        })
-        .catch(() => {})
-    }
   }, [])
 
   useEffect(() => {

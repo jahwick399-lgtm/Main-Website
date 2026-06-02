@@ -1,4 +1,4 @@
-// Re-exports from src/auth.js — kept for backward compat with Dashboard, Admin.
+// Re-exports from src/auth.js for backward compat.
 export {
   getAllUsers as getUsers,
   saveUser,

@@ -100,6 +100,127 @@ function getMemberContent(tier) {
   return content[tier] || null
 }
 
+// ─── In-memory user store ────────────────────────────────────────────────────
+// Users persist while the server is running. Survives multiple requests.
+// Resets only on server restart (upgrade Render to avoid this).
+
+const users = {}
+
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000
+
+function expireIfNeeded(user) {
+  if (!user || user.tier === 'free' || user.tier === 'admin') return user
+  if (!user.subscriptionEnd) return user
+  const now = Date.now()
+  const graceEnd = user.graceUntil || (user.subscriptionEnd + 3 * 24 * 60 * 60 * 1000)
+  if (now > graceEnd) {
+    user.tier = 'free'; user.subscriptionActive = false
+    user.expiredAt = user.expiredAt || user.subscriptionEnd
+  } else if (now > user.subscriptionEnd) {
+    user.graceUntil = user.graceUntil || graceEnd
+  }
+  return user
+}
+
+// ─── Auth routes ─────────────────────────────────────────────────────────────
+
+app.post('/auth/signup', (req, res) => {
+  const { email, password } = req.body
+  if (!email || !password) return res.json({ success: false, error: 'Email and password required.' })
+  const key = email.trim().toLowerCase()
+  if (users[key]) return res.json({ success: false, error: 'Account already exists. Please log in.' })
+  users[key] = {
+    email: key, password: password.trim(), tier: 'free',
+    createdAt: Date.now(), subscriptionActive: false,
+    subscriptionEnd: null, paidAt: null, stripeSessionId: null,
+  }
+  console.log(`[auth/signup] ${key} — total users: ${Object.keys(users).length}`)
+  res.json({ success: true, user: { email: key, tier: 'free' } })
+})
+
+app.post('/auth/login', (req, res) => {
+  const { email, password } = req.body
+  if (!email || !password) return res.json({ success: false, error: 'Email and password required.' })
+  const key = email.trim().toLowerCase()
+  console.log(`[auth/login] attempt: ${key} — known: ${Object.keys(users).join(', ')}`)
+
+  if (key === ADMIN_EMAIL && password.trim() === 'Admin123') {
+    return res.json({ success: true, user: { email: key, tier: 'admin', subscriptionActive: true } })
+  }
+
+  let user = users[key]
+  if (!user) return res.json({ success: false, error: 'No account found with that email.' })
+  if (user.password !== password.trim()) return res.json({ success: false, error: 'Incorrect password. Try again.' })
+
+  user = expireIfNeeded(user)
+  console.log(`[auth/login] success: ${key} tier=${user.tier}`)
+  res.json({ success: true, user: { email: user.email, tier: user.tier, subscriptionEnd: user.subscriptionEnd, subscriptionActive: user.subscriptionActive } })
+})
+
+app.post('/auth/get-user', (req, res) => {
+  const { email } = req.body
+  if (!email) return res.json({ success: false })
+  const key = email.trim().toLowerCase()
+  if (key === ADMIN_EMAIL) return res.json({ success: true, user: { email: key, tier: 'admin', subscriptionActive: true } })
+  let user = users[key]
+  if (!user) return res.json({ success: false })
+  user = expireIfNeeded(user)
+  res.json({ success: true, user: { email: user.email, tier: user.tier, subscriptionEnd: user.subscriptionEnd, subscriptionActive: user.subscriptionActive } })
+})
+
+app.post('/auth/update-tier', (req, res) => {
+  const { email, tier, stripeSessionId } = req.body
+  if (!email || !tier) return res.json({ success: false, error: 'Missing fields.' })
+  const key = email.trim().toLowerCase()
+  const now = Date.now()
+  if (users[key]) {
+    users[key].tier = tier; users[key].subscriptionActive = true
+    users[key].subscriptionStart = now; users[key].subscriptionEnd = now + THIRTY_DAYS
+    users[key].paidAt = now; users[key].stripeSessionId = stripeSessionId
+    users[key].graceUntil = null; users[key].expiredAt = null
+  } else {
+    users[key] = { email: key, password: null, tier, createdAt: now, subscriptionActive: true, subscriptionStart: now, subscriptionEnd: now + THIRTY_DAYS, paidAt: now, stripeSessionId, needsPassword: true }
+  }
+  console.log(`[auth/update-tier] ${key} → ${tier}`)
+  res.json({ success: true })
+})
+
+app.post('/auth/set-password', (req, res) => {
+  const { email, password } = req.body
+  if (!email || !password) return res.json({ success: false, error: 'Missing fields.' })
+  const key = email.trim().toLowerCase()
+  if (!users[key]) return res.json({ success: false, error: 'Account not found.' })
+  users[key].password = password.trim(); users[key].needsPassword = false
+  res.json({ success: true })
+})
+
+app.get('/auth/admin/users', (req, res) => {
+  if (req.query.adminEmail?.toLowerCase() !== ADMIN_EMAIL) return res.status(401).json({ error: 'Unauthorized' })
+  res.json({ success: true, users: Object.values(users) })
+})
+
+app.post('/auth/admin/update-user', (req, res) => {
+  if (req.body.adminEmail?.toLowerCase() !== ADMIN_EMAIL) return res.status(401).json({ error: 'Unauthorized' })
+  const { email, tier, action } = req.body
+  const key = email.trim().toLowerCase()
+  if (!users[key]) return res.json({ success: false, error: 'User not found.' })
+  const now = Date.now()
+  if (action === 'extend') {
+    const base = users[key].subscriptionEnd && users[key].subscriptionEnd > now ? users[key].subscriptionEnd : now
+    users[key].subscriptionEnd = base + THIRTY_DAYS; users[key].subscriptionActive = true
+    users[key].graceUntil = null; users[key].expiredAt = null
+  } else if (action === 'lifetime') {
+    users[key].subscriptionEnd = new Date('2099-01-01').getTime()
+    users[key].subscriptionActive = true; users[key].graceUntil = null; users[key].expiredAt = null
+  } else if (action === 'reset') {
+    users[key].tier = 'free'; users[key].subscriptionActive = false; users[key].expiredAt = now
+  } else if (tier) {
+    users[key].tier = tier
+    if (tier !== 'free') { users[key].subscriptionEnd = now + THIRTY_DAYS; users[key].subscriptionActive = true }
+  }
+  res.json({ success: true })
+})
+
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 app.post('/create-checkout-session', async (req, res) => {

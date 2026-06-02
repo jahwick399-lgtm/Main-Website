@@ -87,30 +87,24 @@ export default function Success() {
 
     fetch(`${API}/verify-session?session_id=${session_id}`)
       .then(r => r.json())
-      .then(data => {
+      .then(async data => {
         if (data.error) { setStatus('error'); return }
 
         const email = (data.customerEmail || '').toLowerCase()
         const tier  = data.tier
         const now   = Date.now()
 
-        // Save subscription details (kept for backward compat / billing lookup)
         localStorage.setItem('rm_subscription', JSON.stringify({
-          subscriptionId: data.subscriptionId,
-          tier,
-          planDisplay:    data.planDisplay,
-          email,
-          content:        data.content,
-          verifiedAt:     now,
+          subscriptionId: data.subscriptionId, tier,
+          planDisplay: data.planDisplay, email,
+          content: data.content, verifiedAt: now,
         }))
 
-        // Find or create user with full subscription dates saved permanently
-        const user      = applyPaidTier(email, tier, session_id)
-        const isNewUser = !user.password
+        await applyPaidTier(email, tier, session_id)
 
         setUserEmail(email)
         setPlanDisplay(data.planDisplay)
-        setStatus(isNewUser ? 'new-user' : 'success')
+        setStatus('success')
       })
       .catch(() => setStatus('error'))
   }, [session_id])
