@@ -2081,7 +2081,7 @@ function PlatformComparison() {
 // ─── Account section ──────────────────────────────────────────────────────────
 
 function AccountSection({ member, onManageBilling, onSignOut }) {
-  const user = getUser(member?.email || '')
+  const user = member
   const days = getDaysRemaining(user)
   const grace = isInGracePeriod(user)
   const isPaid = member.tier !== 'free' && member.tier !== 'admin'
@@ -2474,21 +2474,37 @@ export default function Dashboard() {
     }
 
     // Get user from backend — source of truth for tier
-    getCurrentUser().then(user => {
-      if (!user) { navigate('/login', { replace: true }); return }
-      const tier = user.tier || 'free'
-      const LABELS = { free:'Free Plan', beginner:'Beginner Plan', intermediate:'Intermediate Plan', pro:'Pro Plan' }
-      setMember({
-        tier, planDisplay: LABELS[tier] || 'Free Plan',
-        email: user.email, customerEmail: user.email,
-        subscriptionEnd: user.subscriptionEnd || null,
-        subscriptionActive: user.subscriptionActive || false,
-        content: { categories: [], lockedCategories: [], guides: [] },
+    getCurrentUser()
+      .then(user => {
+        if (!user) { navigate('/login', { replace: true }); return }
+        const tier = user?.tier || 'free'
+        const LABELS = { free:'Free Plan', beginner:'Beginner Plan', intermediate:'Intermediate Plan', pro:'Pro Plan' }
+        setMember({
+          tier, planDisplay: LABELS[tier] || 'Free Plan',
+          email: user?.email || '', customerEmail: user?.email || '',
+          subscriptionEnd: user?.subscriptionEnd || null,
+          subscriptionActive: user?.subscriptionActive || false,
+          graceUntil: user?.graceUntil || null,
+          expiredAt: user?.expiredAt || null,
+          content: { categories: [], lockedCategories: [], guides: [] },
+        })
+        setLoading(false)
+        console.log('DASHBOARD:', { email: user?.email, tier })
       })
-      setLoading(false)
-
-      console.log('DASHBOARD:', { email: user.email, tier })
-    })
+      .catch(err => {
+        console.error('Dashboard load error:', err)
+        // Fall back to session tier so user isn't locked out if backend is slow
+        const session = getSession()
+        const tier = session?.tier || 'free'
+        const LABELS = { free:'Free Plan', beginner:'Beginner Plan', intermediate:'Intermediate Plan', pro:'Pro Plan' }
+        setMember({
+          tier, planDisplay: LABELS[tier] || 'Free Plan',
+          email: session?.email || '', customerEmail: session?.email || '',
+          subscriptionEnd: null, subscriptionActive: tier !== 'free',
+          content: { categories: [], lockedCategories: [], guides: [] },
+        })
+        setLoading(false)
+      })
   }, [])
 
   useEffect(() => {
@@ -2651,7 +2667,7 @@ export default function Dashboard() {
 
           {/* Expiry warning banner — 3 days before expiry */}
           {(() => {
-            const user = getUser(member?.email || '')
+            const user = member
             const days = getDaysRemaining(user)
             const grace = isInGracePeriod(user)
             if (expiryDismissed || !user || member?.tier === 'free' || member?.tier === 'admin') return null

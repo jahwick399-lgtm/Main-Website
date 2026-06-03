@@ -100,11 +100,28 @@ function getMemberContent(tier) {
   return content[tier] || null
 }
 
-// ─── In-memory user store ────────────────────────────────────────────────────
-// Users persist while the server is running. Survives multiple requests.
-// Resets only on server restart (upgrade Render to avoid this).
+// ─── Persistent user store ────────────────────────────────────────────────────
+// Users saved to users.json — survives server restarts on Render.
 
-const users = {}
+const fs        = require('fs')
+const path      = require('path')
+const USERS_FILE = path.join(__dirname, 'users.json')
+
+let users = {}
+try {
+  if (fs.existsSync(USERS_FILE)) {
+    users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'))
+    console.log(`[startup] Loaded ${Object.keys(users).length} users from users.json`)
+  }
+} catch (e) {
+  console.error('[startup] Could not load users.json:', e.message)
+  users = {}
+}
+
+function persistUsers() {
+  try { fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)) }
+  catch (e) { console.error('[persist] Failed to save users.json:', e.message) }
+}
 
 const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000
 
@@ -134,6 +151,7 @@ app.post('/auth/signup', (req, res) => {
     createdAt: Date.now(), subscriptionActive: false,
     subscriptionEnd: null, paidAt: null, stripeSessionId: null,
   }
+  persistUsers()
   console.log(`[auth/signup] ${key} — total users: ${Object.keys(users).length}`)
   res.json({ success: true, user: { email: key, tier: 'free' } })
 })
@@ -161,10 +179,12 @@ app.post('/auth/get-user', (req, res) => {
   const { email } = req.body
   if (!email) return res.json({ success: false })
   const key = email.trim().toLowerCase()
+  console.log(`[auth/get-user] ${key} — known: ${Object.keys(users).join(', ') || 'none'}`)
   if (key === ADMIN_EMAIL) return res.json({ success: true, user: { email: key, tier: 'admin', subscriptionActive: true } })
   let user = users[key]
-  if (!user) return res.json({ success: false })
+  if (!user) { console.log(`[auth/get-user] NOT FOUND: ${key}`); return res.json({ success: false }) }
   user = expireIfNeeded(user)
+  if (user.tier !== users[key].tier) persistUsers()
   res.json({ success: true, user: { email: user.email, tier: user.tier, subscriptionEnd: user.subscriptionEnd, subscriptionActive: user.subscriptionActive } })
 })
 
@@ -181,6 +201,7 @@ app.post('/auth/update-tier', (req, res) => {
   } else {
     users[key] = { email: key, password: null, tier, createdAt: now, subscriptionActive: true, subscriptionStart: now, subscriptionEnd: now + THIRTY_DAYS, paidAt: now, stripeSessionId, needsPassword: true }
   }
+  persistUsers()
   console.log(`[auth/update-tier] ${key} → ${tier}`)
   res.json({ success: true })
 })
@@ -191,6 +212,7 @@ app.post('/auth/set-password', (req, res) => {
   const key = email.trim().toLowerCase()
   if (!users[key]) return res.json({ success: false, error: 'Account not found.' })
   users[key].password = password.trim(); users[key].needsPassword = false
+  persistUsers()
   res.json({ success: true })
 })
 
@@ -218,6 +240,7 @@ app.post('/auth/admin/update-user', (req, res) => {
     users[key].tier = tier
     if (tier !== 'free') { users[key].subscriptionEnd = now + THIRTY_DAYS; users[key].subscriptionActive = true }
   }
+  persistUsers()
   res.json({ success: true })
 })
 
